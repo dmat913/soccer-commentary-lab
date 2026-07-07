@@ -8,8 +8,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { SpeechPlaybackButton } from "@/components/commentary/speech-playback-button";
-import { useFavoriteTranslations } from "@/hooks/use-favorite-translations";
-import { toggleFavoriteTranslation } from "@/lib/favorites/storage";
+import { useFavoriteTranslations, toggleFavorite } from "@/hooks/use-favorite-translations";
 import { cn } from "@/lib/utils";
 import type { CommentaryTranslationItem } from "@/types/commentary";
 
@@ -42,7 +41,7 @@ export function TranslationCard({
       return;
     }
 
-    toggleFavoriteTranslation({
+    toggleFavorite({
       japaneseText,
       text: translation.text,
       meaning: translation.meaning,

@@ -1,4 +1,5 @@
 import type { CommentaryLearningPoint } from "@/types/commentary";
+import type { FavoriteTranslation } from "@/types/favorite";
 
 type LegacyVocabulary = {
   word: string;
@@ -28,4 +29,15 @@ export function resolveLearningPoint(
   }
 
   return { text: "", meaning: "" };
+}
+
+export function resolveFavoriteLearningPoint(
+  favorite: FavoriteTranslation
+): CommentaryLearningPoint | null {
+  const learningPoint = resolveLearningPoint({
+    learningPoint: favorite.learningPoint,
+    vocabulary: favorite.vocabulary,
+  });
+
+  return learningPoint.text ? learningPoint : null;
 }

@@ -2,7 +2,7 @@
 
 import { TranslationCard } from "@/components/commentary/translation-card";
 import { useFavoriteTranslations } from "@/hooks/use-favorite-translations";
-import { resolveFavoriteLearningPoint } from "@/lib/favorites/storage";
+import { resolveFavoriteLearningPoint } from "@/lib/commentary/learning-point";
 
 export function FavoriteTranslations() {
   const favorites = useFavoriteTranslations();

@@ -2,17 +2,20 @@
 
 import { useSyncExternalStore } from "react";
 
-import {
-  getCommentaryHistorySnapshot,
-  getServerCommentaryHistorySnapshot,
-  subscribeCommentaryHistory,
-} from "@/lib/history/storage";
+import { getHistoryRepository } from "@/lib/repositories";
+import type { HistoryAddEntry } from "@/lib/repositories/types";
 import type { CommentaryHistoryItem } from "@/types/history";
+
+const historyRepository = getHistoryRepository();
 
 export function useCommentaryHistory(): CommentaryHistoryItem[] {
   return useSyncExternalStore(
-    subscribeCommentaryHistory,
-    getCommentaryHistorySnapshot,
-    getServerCommentaryHistorySnapshot
+    historyRepository.subscribe.bind(historyRepository),
+    historyRepository.getSnapshot.bind(historyRepository),
+    historyRepository.getServerSnapshot.bind(historyRepository)
   );
+}
+
+export function addHistory(entry: HistoryAddEntry): CommentaryHistoryItem[] {
+  return historyRepository.add(entry);
 }

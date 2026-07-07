@@ -1,4 +1,3 @@
-import { resolveLearningPoint } from "@/lib/commentary/learning-point";
 import type { FavoriteTranslation } from "@/types/favorite";
 import type { CommentaryLearningPoint } from "@/types/commentary";
 
@@ -56,17 +55,6 @@ function isFavoriteTranslation(value: unknown): value is FavoriteTranslation {
     hasLearningPoint &&
     hasLegacyVocabulary
   );
-}
-
-export function resolveFavoriteLearningPoint(
-  favorite: FavoriteTranslation
-): CommentaryLearningPoint | null {
-  const learningPoint = resolveLearningPoint({
-    learningPoint: favorite.learningPoint,
-    vocabulary: favorite.vocabulary,
-  });
-
-  return learningPoint.text ? learningPoint : null;
 }
 
 function readFavoritesFromStorage(): FavoriteTranslation[] {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { AuthControls } from "@/components/auth/auth-controls";
 import { siteNavItems } from "@/components/layout/nav-items";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -66,7 +67,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-emerald-200/60 bg-background/80 backdrop-blur-sm dark:border-emerald-900/60">
-      <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
           href="/"
           className="min-w-0 shrink truncate text-sm font-semibold text-emerald-700 transition-colors hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
@@ -75,21 +76,24 @@ export function SiteHeader() {
           Soccer Commentary Lab
         </Link>
 
-        <nav className="hidden gap-1 md:flex" aria-label="Main navigation">
-          {siteNavItems.map((item) => {
-            const isActive = pathname === item.href;
+        <div className="hidden items-center gap-2 md:flex">
+          <nav className="flex gap-1" aria-label="Main navigation">
+            {siteNavItems.map((item) => {
+              const isActive = pathname === item.href;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={getNavLinkClassName(isActive, "inline")}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={getNavLinkClassName(isActive, "inline")}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <AuthControls layout="inline" />
+        </div>
 
         <Button
           type="button"
@@ -108,7 +112,7 @@ export function SiteHeader() {
       {isMenuOpen ? (
         <nav
           id="mobile-nav"
-          className="border-t border-emerald-200/60 px-4 py-3 md:hidden dark:border-emerald-900/60"
+          className="space-y-3 border-t border-emerald-200/60 px-4 py-3 md:hidden dark:border-emerald-900/60"
           aria-label="Mobile navigation"
         >
           <ul className="flex flex-col gap-1">
@@ -128,6 +132,9 @@ export function SiteHeader() {
               );
             })}
           </ul>
+          <div className="border-t border-emerald-200/60 pt-3 dark:border-emerald-900/60">
+            <AuthControls layout="stacked" onAction={closeMenu} />
+          </div>
         </nav>
       ) : null}
     </header>

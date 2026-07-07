@@ -8,7 +8,7 @@ import { SpeechInputButton } from "@/components/commentary/speech-input-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { addCommentaryHistory } from "@/lib/history/storage";
+import { addHistory } from "@/hooks/use-commentary-history";
 import { translateCommentaryAction } from "@/lib/actions/commentary";
 import type { CommentaryTranslationItem } from "@/types/commentary";
 
@@ -36,7 +36,7 @@ export function CommentaryForm({
       const result = await translateCommentaryAction(japaneseText);
       if (result.success) {
         onTranslationsChange(result.data.translations);
-        addCommentaryHistory({
+        addHistory({
           japaneseText: japaneseText.trim(),
           translations: result.data.translations,
         });
