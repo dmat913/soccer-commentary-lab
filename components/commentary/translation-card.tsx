@@ -8,7 +8,8 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { SpeechPlaybackButton } from "@/components/commentary/speech-playback-button";
-import { useFavoriteTranslations, toggleFavorite } from "@/hooks/use-favorite-translations";
+import { useAuth } from "@/hooks/use-auth";
+import { toggleFavorite, useFavoriteTranslations } from "@/hooks/use-favorite-translations";
 import { cn } from "@/lib/utils";
 import type { CommentaryTranslationItem } from "@/types/commentary";
 
@@ -30,6 +31,7 @@ export function TranslationCard({
   japaneseText,
   showIndex = true,
 }: TranslationCardProps) {
+  const { user } = useAuth();
   const favorites = useFavoriteTranslations();
   const isFavorite = favorites.some(
     (favorite) => favorite.text === translation.text
@@ -41,13 +43,16 @@ export function TranslationCard({
       return;
     }
 
-    toggleFavorite({
-      japaneseText,
-      text: translation.text,
-      meaning: translation.meaning,
-      explanation: translation.explanation,
-      learningPoint: translation.learningPoint,
-    });
+    toggleFavorite(
+      {
+        japaneseText,
+        text: translation.text,
+        meaning: translation.meaning,
+        explanation: translation.explanation,
+        learningPoint: translation.learningPoint,
+      },
+      user?.id
+    );
   }
 
   return (
