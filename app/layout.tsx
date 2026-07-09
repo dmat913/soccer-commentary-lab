@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { AppGoogleAnalytics } from "@/components/analytics/app-google-analytics";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -39,6 +40,7 @@ export default async function RootLayout({
           <div className="flex-1">{children}</div>
           <SiteFooter />
         </AuthProvider>
+        <AppGoogleAnalytics />
       </body>
     </html>
   );
