@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "@/components/auth/google-icon";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -59,18 +59,20 @@ export function LoginButton({
 
   return (
     <div className={cn("space-y-2", fullWidth && "w-full", className)}>
-      <Button
+      <button
         type="button"
-        variant="outline"
-        className={cn(
-          "border-emerald-200 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 dark:border-emerald-800 dark:text-emerald-200 dark:hover:bg-emerald-950/50",
-          fullWidth && "w-full"
-        )}
         disabled={isSubmitting}
         onClick={handleSignIn}
+        className={cn(
+          "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-emerald-200/90 bg-white px-3.5 text-sm font-medium text-emerald-900 shadow-sm transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-emerald-800 dark:bg-background dark:text-emerald-100 dark:hover:bg-emerald-950/50 sm:px-4",
+          fullWidth && "w-full"
+        )}
       >
-        {isSubmitting ? "Redirecting..." : "Sign in with Google"}
-      </Button>
+        <GoogleIcon className="size-4" />
+        <span className="truncate">
+          {isSubmitting ? "Redirecting..." : "Sign in with Google"}
+        </span>
+      </button>
       {errorMessage ? (
         <p className="text-xs leading-relaxed text-destructive">{errorMessage}</p>
       ) : null}

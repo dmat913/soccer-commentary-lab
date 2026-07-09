@@ -31,5 +31,6 @@ export interface HistoryRepository {
   getSnapshot(): CommentaryHistoryItem[];
   getServerSnapshot(): CommentaryHistoryItem[];
   add(entry: HistoryAddEntry): CommentaryHistoryItem[];
+  remove(id: string): CommentaryHistoryItem[];
   load(): CommentaryHistoryItem[];
 }

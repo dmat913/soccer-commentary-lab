@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getUser } from "@/lib/auth/get-user";
+import { metadata as siteMetadata } from "@/lib/seo/metadata";
 
 import "./globals.css";
 
@@ -18,11 +19,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "サッカー実況を英語で学ぶ",
-  description:
-    "日本語のサッカー実況を英語の実況フレーズに変換して学ぶWebサービス",
-};
+export const metadata: Metadata = siteMetadata;
 
 export default async function RootLayout({
   children,

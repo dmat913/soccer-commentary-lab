@@ -4,6 +4,7 @@ import { Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type SpeechRecognitionInstance = {
   lang: string;
@@ -150,9 +151,14 @@ export function SpeechInputButton({
       onClick={handleClick}
       aria-label={isListening ? "音声入力を停止" : "音声入力を開始"}
       aria-pressed={isListening}
-      className="shrink-0"
+      className={cn(
+        "size-12 shrink-0 rounded-2xl shadow-md transition-all",
+        isListening
+          ? "shadow-red-200/50"
+          : "border-emerald-300 bg-emerald-50 text-emerald-700 shadow-emerald-200/40 hover:border-emerald-400 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 dark:shadow-emerald-950/40 dark:hover:bg-emerald-900/50"
+      )}
     >
-      {isListening ? <Square /> : <Mic />}
+      {isListening ? <Square className="size-5" /> : <Mic className="size-5" />}
     </Button>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthSkeleton } from "@/components/auth/auth-skeleton";
 import { LoginButton } from "@/components/auth/login-button";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 type AuthControlsProps = {
   className?: string;
-  layout?: "inline" | "stacked";
+  layout?: "inline" | "stacked" | "compact";
   onAction?: () => void;
 };
 
@@ -20,15 +21,10 @@ export function AuthControls({
 
   if (isLoading) {
     return (
-      <div
-        className={cn(
-          "text-sm text-muted-foreground",
-          layout === "stacked" && "px-3 py-2",
-          className
-        )}
-      >
-        Loading...
-      </div>
+      <AuthSkeleton
+        className={className}
+        compact={layout === "compact"}
+      />
     );
   }
 

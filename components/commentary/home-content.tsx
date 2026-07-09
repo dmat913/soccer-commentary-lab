@@ -1,10 +1,12 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { CommentaryForm } from "@/components/commentary/commentary-form";
 import { useCommentaryHistory } from "@/hooks/use-commentary-history";
+import { FadeIn } from "@/components/ui/motion";
 import type { CommentaryTranslationItem } from "@/types/commentary";
 
 export function HomeContent() {
@@ -44,26 +46,35 @@ export function HomeContent() {
 
   return (
     <>
-      <header className="space-y-3 text-center sm:text-left">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+      <FadeIn>
+        <header className="space-y-5 text-center sm:space-y-6 sm:text-left">
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-4 py-1.5 text-xs font-semibold tracking-wide text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+          <Sparkles className="size-3.5" aria-hidden="true" />
           Soccer Commentary Lab
         </div>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          サッカー実況を英語で学ぶ
-        </h1>
-        <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-          日本語のサッカー実況を入力して、「変換」ボタンを押すと英語の実況フレーズに変換されます。
-        </p>
+        <div className="space-y-4 sm:space-y-5">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            サッカー実況を
+            <br className="sm:hidden" />
+            英語で学ぶ
+          </h1>
+          <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:mx-0 sm:text-lg sm:leading-8">
+            日本語のサッカー実況を入力して、「変換」ボタンを押すと英語の実況フレーズに変換されます。
+          </p>
+        </div>
       </header>
+      </FadeIn>
 
-      <section className="rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm sm:p-8">
-        <CommentaryForm
-          japaneseText={japaneseText}
-          onJapaneseTextChange={setJapaneseText}
-          translations={translations}
-          onTranslationsChange={setTranslations}
-        />
-      </section>
+      <FadeIn delay={0.08}>
+        <section className="rounded-3xl border border-emerald-100/80 bg-card/90 p-5 shadow-xl shadow-emerald-200/25 backdrop-blur-sm sm:p-8 dark:border-emerald-900/50 dark:shadow-emerald-950/40">
+          <CommentaryForm
+            japaneseText={japaneseText}
+            onJapaneseTextChange={setJapaneseText}
+            translations={translations}
+            onTranslationsChange={setTranslations}
+          />
+        </section>
+      </FadeIn>
     </>
   );
 }

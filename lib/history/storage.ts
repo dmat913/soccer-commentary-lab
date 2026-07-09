@@ -179,6 +179,27 @@ export function addCommentaryHistory(entry: {
   return updated;
 }
 
+export function removeCommentaryHistory(id: string): CommentaryHistoryItem[] {
+  const current = getCommentaryHistorySnapshot();
+  const updated =
+    current === EMPTY_HISTORY
+      ? EMPTY_HISTORY
+      : current.filter((item) => item.id !== id);
+
+  if (typeof window !== "undefined") {
+    if (updated.length === 0) {
+      localStorage.removeItem(STORAGE_KEY);
+      cachedSnapshot = EMPTY_HISTORY;
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      cachedSnapshot = updated;
+    }
+    notifyHistoryListeners();
+  }
+
+  return updated;
+}
+
 export function getServerCommentaryHistorySnapshot(): CommentaryHistoryItem[] {
   return EMPTY_HISTORY;
 }
