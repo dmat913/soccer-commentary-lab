@@ -1,8 +1,10 @@
 "use client";
 
+import { Square, Volume2 } from "lucide-react";
 import { useEffect, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const speakingListeners = new Set<() => void>();
 let currentSpeakingText: string | null = null;
@@ -108,8 +110,22 @@ export function SpeechPlaybackButton({ text }: SpeechPlaybackButtonProps) {
       onClick={handleClick}
       aria-label={isSpeaking ? "読み上げを停止" : "英語実況を再生"}
       aria-pressed={isSpeaking}
+      className={cn(
+        "rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50",
+        isSpeaking && "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white"
+      )}
     >
-      {isSpeaking ? "⏹ 停止" : "🔊 再生"}
+      {isSpeaking ? (
+        <>
+          <Square className="size-3.5" aria-hidden="true" />
+          停止
+        </>
+      ) : (
+        <>
+          <Volume2 className="size-3.5" aria-hidden="true" />
+          再生
+        </>
+      )}
     </Button>
   );
 }

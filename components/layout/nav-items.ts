@@ -1,5 +1,13 @@
-export const siteNavItems = [
-  { href: "/", label: "Home" },
-  { href: "/favorites", label: "Favorites" },
-  { href: "/history", label: "History" },
-] as const;
+import { History, Home, Star, type LucideIcon } from "lucide-react";
+
+export type SiteNavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+export const siteNavItems: SiteNavItem[] = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/favorites", label: "Favorites", icon: Star },
+  { href: "/history", label: "History", icon: History },
+];
