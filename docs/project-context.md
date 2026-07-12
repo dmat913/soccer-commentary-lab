@@ -1,4 +1,4 @@
-# Soccer Commentary Lab — Project Context
+# KickLingo — Project Context
 
 Version: 1.0
 
@@ -8,7 +8,7 @@ Last Updated: 2026-07-06
 
 # プロジェクト概要
 
-Soccer Commentary Lab は、日本語のサッカー実況を
+KickLingo は、日本語のサッカー実況を
 
 Premier League風の自然な英語実況へ変換し、
 

@@ -1,10 +1,15 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { CommentaryForm } from "@/components/commentary/commentary-form";
+import { CommentaryResults } from "@/components/commentary/commentary-results";
+import { HomeBuiltWith } from "@/components/home/home-built-with";
+import { HomeComingSoon } from "@/components/home/home-coming-soon";
+import { HomeEmptyExamples } from "@/components/home/home-empty-examples";
+import { HomeFeatures } from "@/components/home/home-features";
+import { HomeHero } from "@/components/home/home-hero";
 import { useCommentaryHistory } from "@/hooks/use-commentary-history";
 import { FadeIn } from "@/components/ui/motion";
 import type { CommentaryTranslationItem } from "@/types/commentary";
@@ -19,6 +24,9 @@ export function HomeContent() {
   const [translations, setTranslations] = useState<CommentaryTranslationItem[]>(
     []
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const showResults = isLoading || translations.length > 0;
+  const showEmptyState = !showResults;
 
   useEffect(() => {
     const restoreId = searchParams.get("restore");
@@ -37,7 +45,7 @@ export function HomeContent() {
     router.replace("/", { scroll: false });
 
     requestAnimationFrame(() => {
-      document.getElementById("commentary-form")?.scrollIntoView({
+      document.getElementById("commentary-results")?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
@@ -46,35 +54,42 @@ export function HomeContent() {
 
   return (
     <>
-      <FadeIn>
-        <header className="space-y-5 text-center sm:space-y-6 sm:text-left">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-4 py-1.5 text-xs font-semibold tracking-wide text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          Soccer Commentary Lab
-        </div>
-        <div className="space-y-4 sm:space-y-5">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            サッカー実況を
-            <br className="sm:hidden" />
-            英語で学ぶ
-          </h1>
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:mx-0 sm:text-lg sm:leading-8">
-            日本語のサッカー実況を入力して、「変換」ボタンを押すと英語の実況フレーズに変換されます。
-          </p>
-        </div>
-      </header>
-      </FadeIn>
+      <div className="space-y-4 sm:space-y-6">
+        <HomeHero />
 
-      <FadeIn delay={0.08}>
-        <section className="rounded-3xl border border-emerald-100/80 bg-card/90 p-5 shadow-xl shadow-emerald-200/25 backdrop-blur-sm sm:p-8 dark:border-emerald-900/50 dark:shadow-emerald-950/40">
-          <CommentaryForm
+        <FadeIn delay={0.1} duration={0.55} y={16}>
+          <div className="space-y-3">
+            <CommentaryForm
+              japaneseText={japaneseText}
+              onJapaneseTextChange={setJapaneseText}
+              onTranslationsChange={setTranslations}
+              onLoadingChange={setIsLoading}
+            />
+            {showEmptyState ? (
+              <HomeEmptyExamples
+                japaneseText={japaneseText}
+                onSelectExample={setJapaneseText}
+              />
+            ) : null}
+          </div>
+        </FadeIn>
+      </div>
+
+      {showResults ? (
+        <div id="commentary-results">
+          <CommentaryResults
             japaneseText={japaneseText}
-            onJapaneseTextChange={setJapaneseText}
             translations={translations}
-            onTranslationsChange={setTranslations}
+            isLoading={isLoading}
           />
-        </section>
-      </FadeIn>
+        </div>
+      ) : null}
+
+      <HomeFeatures />
+
+      <HomeComingSoon />
+
+      <HomeBuiltWith />
     </>
   );
 }

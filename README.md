@@ -1,6 +1,6 @@
-# Soccer Commentary Lab
+# KickLingo
 
-日本語のサッカー実況を入力すると、Premier League 風の英語実況へ変換して学べる Web サービスです。
+KickLingo は、日本語のサッカー実況を入力すると、Premier League 風の英語実況へ変換して学べる Web サービスです。
 
 ## 主な機能
 
@@ -21,6 +21,38 @@ npm run dev
 ```
 
 http://localhost:3000 を開いて利用します。
+
+## Google Analytics (GA4)
+
+アクセス解析には Google Analytics 4 を利用します。Measurement ID は環境変数から読み込みます。
+
+### ローカル設定
+
+1. `.env.local` を作成（存在しなければ `cp .env.example .env.local`）
+2. 以下を設定する
+
+```env
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-GF7Q1Y2P6X
+```
+
+3. 開発サーバーを再起動する（`npm run dev`）
+4. ブラウザでサイトを開き、Google Analytics のリアルタイム画面でアクセスを確認する
+
+**重要:** `NEXT_PUBLIC_*` は **ビルド時** に埋め込まれます。Vercel では環境変数を追加・変更したあと、**Production を再デプロイ**してください。反映されない場合は **Clear build cache** 付きで再デプロイしてください。
+
+未設定の場合は `GoogleAnalytics` コンポーネントは描画されません。
+
+### Vercel 設定
+
+Vercel の **Environment Variables** に以下を追加します。
+
+| Name | Value |
+|---|---|
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-GF7Q1Y2P6X` |
+
+デプロイ後、本番 URL でアクセスし、Google Analytics のリアルタイム画面で確認してください。
+
+環境変数を追加しただけでは反映されません。必ず **Production の再ビルド・再デプロイ** を行ってください（必要なら **Clear build cache** を有効にする）。
 
 ## コマンド
 
@@ -47,6 +79,7 @@ Vercel へデプロイする前に、以下を確認してください。
 - [ ] `npm run build` が成功すること
 - [ ] `.env.local` に `OPENAI_API_KEY` が設定されていること
 - [ ] Vercel の Environment Variables に `OPENAI_API_KEY` を設定すること
+- [ ] （任意）`NEXT_PUBLIC_GA_MEASUREMENT_ID` をローカル / Vercel に設定し、GA4 リアルタイムでアクセスが記録されること
 
 ### 主要機能
 

@@ -43,6 +43,7 @@ type SpeechRecognitionErrorEvent = {
 type SpeechInputButtonProps = {
   currentText: string;
   onTranscript: (text: string) => void;
+  className?: string;
 };
 
 function getSpeechRecognitionConstructor():
@@ -75,6 +76,7 @@ function useIsClient(): boolean {
 export function SpeechInputButton({
   currentText,
   onTranscript,
+  className,
 }: SpeechInputButtonProps) {
   const isClient = useIsClient();
   const isSupported =
@@ -155,7 +157,8 @@ export function SpeechInputButton({
         "size-12 shrink-0 rounded-2xl shadow-md transition-all",
         isListening
           ? "shadow-red-200/50"
-          : "border-emerald-300 bg-emerald-50 text-emerald-700 shadow-emerald-200/40 hover:border-emerald-400 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 dark:shadow-emerald-950/40 dark:hover:bg-emerald-900/50"
+          : "border-emerald-300 bg-emerald-50 text-emerald-700 shadow-emerald-200/40 hover:border-emerald-400 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 dark:shadow-emerald-950/40 dark:hover:bg-emerald-900/50",
+        className
       )}
     >
       {isListening ? <Square className="size-5" /> : <Mic className="size-5" />}

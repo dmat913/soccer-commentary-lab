@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { AppGoogleAnalytics } from "@/components/analytics/app-google-analytics";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { Toaster } from "@/components/ui/sonner";
 import { getUser } from "@/lib/auth/get-user";
 import { metadata as siteMetadata } from "@/lib/seo/metadata";
 
@@ -33,12 +36,15 @@ export default async function RootLayout({
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <AuthProvider initialUser={initialUser}>
           <SiteHeader />
           <div className="flex-1">{children}</div>
           <SiteFooter />
+          <MobileBottomNav />
+          <Toaster position="bottom-center" richColors closeButton />
         </AuthProvider>
+        <AppGoogleAnalytics />
       </body>
     </html>
   );
