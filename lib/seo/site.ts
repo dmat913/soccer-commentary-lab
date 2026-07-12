@@ -1,8 +1,8 @@
 export const SITE_URL = "https://soccer-commentary-lab.vercel.app";
 
-export const SITE_NAME = "Soccer Commentary Lab";
+export const SITE_NAME = "KickLingo";
 
-export const SITE_TITLE = "Soccer Commentary Lab | サッカー実況を英語で学ぶ";
+export const SITE_TITLE = "KickLingo | サッカー実況を英語で学ぶ";
 
 export const SITE_DESCRIPTION =
   "日本語のサッカー実況をPremier League風の自然な英語実況へ変換。実況英語を学べる無料Webサービス。";

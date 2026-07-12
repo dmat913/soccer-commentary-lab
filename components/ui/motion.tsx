@@ -9,15 +9,68 @@ type FadeInProps = {
   children: ReactNode;
   className?: string;
   delay?: number;
+  duration?: number;
+  y?: number;
 };
 
-export function FadeIn({ children, className, delay = 0 }: FadeInProps) {
+export function FadeIn({
+  children,
+  className,
+  delay = 0,
+  duration = 0.45,
+  y = 14,
+}: FadeInProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay, ease: easeOut }}
+      transition={{ duration, delay, ease: easeOut }}
       className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+type SlideUpFadeInProps = {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+};
+
+/** Softer entrance for result cards after conversion. */
+export function SlideUpFadeIn({
+  children,
+  className,
+  delay = 0,
+}: SlideUpFadeInProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay, ease: easeOut }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+type FloatProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function Float({ children, className }: FloatProps) {
+  return (
+    <motion.div
+      className={className}
+      animate={{ y: [0, -5, 0] }}
+      transition={{
+        duration: 4.5,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
     >
       {children}
     </motion.div>
@@ -31,7 +84,7 @@ type HoverLiftProps = HTMLMotionProps<"div"> & {
 export function HoverLift({ children, className, ...props }: HoverLiftProps) {
   return (
     <motion.div
-      whileHover={{ y: -4, transition: { duration: 0.2, ease: easeOut } }}
+      whileHover={{ y: -2, transition: { duration: 0.2, ease: easeOut } }}
       className={className}
       {...props}
     >

@@ -1,22 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
 
 import { AuthControls } from "@/components/auth/auth-controls";
+import { KickLingoMark } from "@/components/brand/kicklingo-mark";
 import { siteNavItems } from "@/components/layout/nav-items";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
-function getNavLinkClassName(isActive: boolean, layout: "inline" | "stacked") {
+function getNavLinkClassName(isActive: boolean) {
   return cn(
-    "flex items-center gap-2 text-sm font-medium transition-colors",
-    layout === "inline" && "rounded-lg px-3 py-1.5",
-    layout === "stacked" && "rounded-xl px-3 py-2.5",
+    "flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
     isActive
       ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/25 dark:bg-emerald-500 dark:text-emerald-950 dark:shadow-emerald-500/20"
       : "text-muted-foreground hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300"
@@ -25,85 +19,27 @@ function getNavLinkClassName(isActive: boolean, layout: "inline" | "stacked") {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  function closeMenu() {
-    setIsMenuOpen(false);
-  }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-emerald-200/50 bg-background/85 backdrop-blur-md dark:border-emerald-900/50">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-emerald-200/50 bg-background/90 backdrop-blur-sm dark:border-emerald-900/50">
+      <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
         <Link
           href="/"
-          className="min-w-0 max-w-[42%] truncate text-sm font-semibold text-emerald-700 transition-colors hover:text-emerald-800 sm:max-w-none sm:truncate-none sm:whitespace-nowrap dark:text-emerald-300 dark:hover:text-emerald-200"
-          onClick={closeMenu}
+          aria-label="KickLingo ホーム"
+          className="flex min-w-0 shrink items-center gap-1.5 rounded-md transition-opacity duration-200 ease-out hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
         >
-          Soccer Commentary Lab
+          <KickLingoMark className="size-6 shrink-0" />
+          <span className="truncate text-base font-bold tracking-tight whitespace-nowrap">
+            <span className="text-[#0F172A] dark:text-white">Kick</span>
+            <span className="text-emerald-600 dark:text-emerald-400">Lingo</span>
+          </span>
         </Link>
 
         <nav
           className="hidden flex-1 justify-center md:flex"
           aria-label="Main navigation"
         >
-          <div className="flex gap-1">
-            {siteNavItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-
-              return (
-                <motion.div
-                  key={item.href}
-                  whileHover={{ y: -1 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <Link
-                    href={item.href}
-                    className={getNavLinkClassName(isActive, "inline")}
-                  >
-                    <Icon className="size-4" aria-hidden="true" />
-                    {item.label}
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="ml-auto flex h-9 shrink-0 items-center gap-2">
-          <div className="hidden md:block">
-            <AuthControls layout="inline" />
-          </div>
-
-          {user ? (
-            <div className="md:hidden">
-              <AuthControls layout="compact" onAction={closeMenu} />
-            </div>
-          ) : null}
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-9 shrink-0 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 md:hidden dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
-            aria-expanded={isMenuOpen}
-            aria-controls="mobile-nav"
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            onClick={() => setIsMenuOpen((open) => !open)}
-          >
-            {isMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
-          </Button>
-        </div>
-      </div>
-
-      {isMenuOpen ? (
-        <nav
-          id="mobile-nav"
-          className="space-y-3 border-t border-emerald-200/50 px-4 py-3 md:hidden dark:border-emerald-900/50"
-          aria-label="Mobile navigation"
-        >
-          <ul className="flex flex-col gap-1">
+          <ul className="flex items-center gap-1">
             {siteNavItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -112,8 +48,8 @@ export function SiteHeader() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={getNavLinkClassName(isActive, "stacked")}
-                    onClick={closeMenu}
+                    aria-current={isActive ? "page" : undefined}
+                    className={getNavLinkClassName(isActive)}
                   >
                     <Icon className="size-4" aria-hidden="true" />
                     {item.label}
@@ -122,13 +58,12 @@ export function SiteHeader() {
               );
             })}
           </ul>
-          {!user ? (
-            <div className="border-t border-emerald-200/50 pt-3 dark:border-emerald-900/50">
-              <AuthControls layout="stacked" onAction={closeMenu} />
-            </div>
-          ) : null}
         </nav>
-      ) : null}
+
+        <div className="ml-auto flex h-9 shrink-0 items-center">
+          <AuthControls />
+        </div>
+      </div>
     </header>
   );
 }

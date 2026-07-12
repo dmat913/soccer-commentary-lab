@@ -1,6 +1,6 @@
-# Soccer Commentary Lab
+# KickLingo
 
-日本語のサッカー実況を入力すると、Premier League 風の英語実況へ変換して学べる Web サービスです。
+KickLingo は、日本語のサッカー実況を入力すると、Premier League 風の英語実況へ変換して学べる Web サービスです。
 
 ## 主な機能
 

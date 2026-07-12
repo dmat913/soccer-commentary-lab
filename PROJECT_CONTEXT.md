@@ -1,4 +1,4 @@
-# Soccer Commentary Lab — プロジェクトコンテキスト
+# KickLingo — プロジェクトコンテキスト
 
 新しいチャットへ引き継ぐための要約ドキュメント。
 
@@ -7,7 +7,8 @@
 日本語のサッカー実況を入力すると、OpenAI が Premier League 風の英語実況へ変換する Web 学習サービス。  
 学習者が「実況英語」の語彙・ニュアンスの違いを比較しながら学べることを目的とする。
 
-- プロジェクト名: `soccer-commentary`
+- ブランド名: `KickLingo`
+- コードネーム / ディレクトリ: `soccer-commentary`
 - 配置: `~/Projects/soccer-commentary`
 - 現状: MVP 完成。**Home / Favorites / History の3画面構成**。データは localStorage 中心。
 
