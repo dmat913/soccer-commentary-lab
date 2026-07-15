@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut, Settings, User } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -126,6 +127,18 @@ export function UserMenu({
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
+
+          <p className="px-3 py-1.5 text-xs leading-relaxed text-muted-foreground">
+            ログアウトしても保存データは削除されません。削除は
+            <Link
+              href="/contact"
+              className="font-medium text-emerald-700 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 dark:text-emerald-400"
+              onClick={() => setOpen(false)}
+            >
+              お問い合わせ
+            </Link>
+            から依頼できます。
+          </p>
 
           <DropdownMenuItem
             disabled={isSubmitting}

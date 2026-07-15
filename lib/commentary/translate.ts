@@ -176,15 +176,6 @@ function parseTranslationResponse(content: string): OpenAITranslationResponse | 
   }
 }
 
-function formatEnglishText(translations: OpenAITranslationItem[]): string {
-  return translations
-    .map(
-      ({ text, meaning, learningPoint }) =>
-        `${text}\n(${meaning})\n\nLearning Point: ${learningPoint.text}（${learningPoint.meaning}）`
-    )
-    .join("\n\n");
-}
-
 function failure(
   code: TranslateErrorCode,
   message: string,
@@ -258,12 +249,6 @@ export async function translateCommentary(
         content
       );
     }
-
-    console.log("[translateCommentary]", {
-      japaneseText: trimmedText,
-      englishText: formatEnglishText(parsed.translations),
-      translations: parsed.translations,
-    });
 
     return {
       success: true,

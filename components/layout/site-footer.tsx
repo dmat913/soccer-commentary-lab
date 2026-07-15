@@ -40,6 +40,35 @@ export function SiteFooter() {
           </ul>
         </nav>
 
+        <nav aria-label="法務・サポート">
+          <ul className="flex flex-wrap gap-x-4 gap-y-2">
+            <li>
+              <Link
+                href="/privacy"
+                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+              >
+                プライバシーポリシー
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/terms"
+                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+              >
+                利用規約
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+              >
+                お問い合わせ
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
         <p className="text-xs text-muted-foreground/55">
           © {currentYear} KickLingo
         </p>

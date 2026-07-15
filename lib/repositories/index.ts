@@ -8,9 +8,21 @@ import {
   createSupabaseHistoryRepository,
   type SupabaseHistoryRepository,
 } from "@/lib/repositories/history.supabase";
+import { localDailyChallengeRepository } from "@/lib/repositories/daily.local";
+import {
+  createSupabaseDailyChallengeRepository,
+  type SupabaseDailyChallengeRepository,
+} from "@/lib/repositories/daily.supabase";
+import { localVocabularyRepository } from "@/lib/repositories/vocabulary.local";
+import {
+  createSupabaseVocabularyRepository,
+  type SupabaseVocabularyRepository,
+} from "@/lib/repositories/vocabulary.supabase";
 import type {
+  DailyChallengeRepository,
   FavoritesRepository,
   HistoryRepository,
+  VocabularyRepository,
 } from "@/lib/repositories/types";
 
 const supabaseFavoritesRepositories = new Map<
@@ -21,6 +33,16 @@ const supabaseFavoritesRepositories = new Map<
 const supabaseHistoryRepositories = new Map<
   string,
   SupabaseHistoryRepository
+>();
+
+const supabaseVocabularyRepositories = new Map<
+  string,
+  SupabaseVocabularyRepository
+>();
+
+const supabaseDailyChallengeRepositories = new Map<
+  string,
+  SupabaseDailyChallengeRepository
 >();
 
 export function getFavoritesRepository(
@@ -52,6 +74,45 @@ export function getHistoryRepository(
   if (!repository) {
     repository = createSupabaseHistoryRepository(userId);
     supabaseHistoryRepositories.set(userId, repository);
+  }
+
+  return repository;
+}
+
+export function getVocabularyRepository(
+  userId?: string | null
+): VocabularyRepository {
+  if (!userId) {
+    return localVocabularyRepository;
+  }
+
+  let repository = supabaseVocabularyRepositories.get(userId);
+
+  if (!repository) {
+    repository = createSupabaseVocabularyRepository(userId);
+    supabaseVocabularyRepositories.set(userId, repository);
+  }
+
+  return repository;
+}
+
+/**
+ * Daily Challenge repository.
+ * - No userId → shared localStorage repository
+ * - With userId → per-user Supabase repository (cached by userId)
+ */
+export function getDailyChallengeRepository(
+  userId?: string | null
+): DailyChallengeRepository {
+  if (!userId) {
+    return localDailyChallengeRepository;
+  }
+
+  let repository = supabaseDailyChallengeRepositories.get(userId);
+
+  if (!repository) {
+    repository = createSupabaseDailyChallengeRepository(userId);
+    supabaseDailyChallengeRepositories.set(userId, repository);
   }
 
   return repository;

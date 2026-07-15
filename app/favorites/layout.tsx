@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 
-import { getCanonicalUrl, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo/site";
+import { getCanonicalUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
-  title: SITE_TITLE,
+  title: `お気に入り | ${SITE_NAME}`,
   description: SITE_DESCRIPTION,
+  robots: {
+    index: false,
+    follow: false,
+  },
   alternates: {
     canonical: getCanonicalUrl("/favorites"),
   },

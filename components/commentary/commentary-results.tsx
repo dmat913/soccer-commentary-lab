@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { TranslationCard } from "@/components/commentary/translation-card";
 import { TranslationLoadingState } from "@/components/commentary/translation-loading-state";
 import { FadeIn } from "@/components/ui/motion";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 import type { CommentaryTranslationItem } from "@/types/commentary";
 
 const easeOut = [0.25, 0.1, 0.25, 1] as const;
@@ -22,6 +23,7 @@ export function CommentaryResults({
 }: CommentaryResultsProps) {
   const hasResults = translations.length > 0;
   const shouldReduceMotion = useReducedMotion();
+  const { addVocabularyItem, isVocabularyItemSaved } = useVocabulary();
 
   const statusMessage = isLoading
     ? "英語実況を生成中です"
@@ -71,6 +73,18 @@ export function CommentaryResults({
                 japaneseText={japaneseText.trim()}
                 compact
                 denseOnMobile
+                showVocabularyAction
+                isVocabularySaved={isVocabularyItemSaved(translation.text)}
+                onAddVocabulary={() =>
+                  addVocabularyItem({
+                    englishText: translation.text,
+                    meaning: translation.meaning,
+                    japaneseText: japaneseText.trim(),
+                    ...(translation.learningPoint.text
+                      ? { learningPoint: translation.learningPoint }
+                      : {}),
+                  })
+                }
               />
             </motion.div>
           ))}
