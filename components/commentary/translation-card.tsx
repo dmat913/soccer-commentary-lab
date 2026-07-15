@@ -1,7 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Clipboard, Lightbulb, MessageCircle, Play, Star } from "lucide-react";
+import {
+  BookMarked,
+  BookmarkCheck,
+  Check,
+  Clipboard,
+  Lightbulb,
+  MessageCircle,
+  Play,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,6 +40,16 @@ type TranslationCardProps = {
   favoriteSurface?: boolean;
   /** Home result: tighten spacing on mobile only (Desktop + Favorites untouched). */
   denseOnMobile?: boolean;
+  /** Whether the favorite (star) action is shown. Hidden on the Vocabulary page. */
+  showFavoriteAction?: boolean;
+  /** Home result: show the "add to vocabulary" action. */
+  showVocabularyAction?: boolean;
+  /** Home result: whether this expression is already in the vocabulary book. */
+  isVocabularySaved?: boolean;
+  /** Home result: add this expression to the vocabulary book. */
+  onAddVocabulary?: () => void;
+  /** Vocabulary page: remove this item from the vocabulary book. */
+  onRemoveVocabulary?: () => void;
 };
 
 const CANDIDATE_MARKERS = ["①", "②", "③"] as const;
@@ -51,6 +71,11 @@ export function TranslationCard({
   showOriginal = false,
   favoriteSurface = false,
   denseOnMobile = false,
+  showFavoriteAction = true,
+  showVocabularyAction = false,
+  isVocabularySaved = false,
+  onAddVocabulary,
+  onRemoveVocabulary,
 }: TranslationCardProps) {
   const { user } = useAuth();
   const favorites = useFavoriteTranslations();
@@ -156,7 +181,7 @@ export function TranslationCard({
             )}
 
             <div className="ml-auto flex shrink-0 items-center gap-1">
-              {japaneseText ? (
+              {japaneseText && showFavoriteAction ? (
                 <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }}>
                   <Button
                     type="button"
@@ -182,6 +207,31 @@ export function TranslationCard({
                 </motion.div>
               ) : null}
 
+              {showVocabularyAction ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  onClick={onAddVocabulary}
+                  disabled={isVocabularySaved}
+                  aria-label={
+                    isVocabularySaved ? "単語帳に追加済み" : "単語帳に追加"
+                  }
+                  className={cn(
+                    actionButtonClassName,
+                    isVocabularySaved
+                      ? "text-emerald-600 disabled:opacity-100 dark:text-emerald-400"
+                      : "text-foreground/70 hover:text-emerald-800 dark:text-emerald-200 dark:hover:text-emerald-100"
+                  )}
+                >
+                  {isVocabularySaved ? (
+                    <BookmarkCheck className="size-5" aria-hidden="true" />
+                  ) : (
+                    <BookMarked className="size-5" aria-hidden="true" />
+                  )}
+                </Button>
+              ) : null}
+
               <SpeechPlaybackButton text={translation.text} variant="icon" />
 
               <Button
@@ -201,6 +251,22 @@ export function TranslationCard({
                   <Clipboard className="size-5" aria-hidden="true" />
                 )}
               </Button>
+
+              {onRemoveVocabulary ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  onClick={onRemoveVocabulary}
+                  aria-label="単語帳から削除"
+                  className={cn(
+                    actionButtonClassName,
+                    "text-foreground/60 hover:bg-red-50 hover:text-red-600 dark:text-emerald-200/70 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                  )}
+                >
+                  <Trash2 className="size-5" aria-hidden="true" />
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -346,6 +412,8 @@ export function TranslationCard({
                   href={youtubeSearchUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  title="この表現を実況動画で練習する"
+                  aria-label="この表現をYouTubeの実況で練習する"
                 />
               }
             >
@@ -353,7 +421,7 @@ export function TranslationCard({
                 className="size-3.5 shrink-0 fill-red-600 text-red-600 sm:size-4"
                 aria-hidden="true"
               />
-              <span className="truncate">Practice on YouTube</span>
+              <span className="truncate">この表現を練習</span>
             </Button>
           </div>
         </CardContent>

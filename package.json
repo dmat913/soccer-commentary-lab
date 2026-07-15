@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test lib/vocabulary/learning.test.ts lib/vocabulary/display.test.ts lib/vocabulary/sort-preference.test.ts lib/daily/vocabulary-learning.test.ts lib/quiz/vocabulary-learning.test.ts",
     "test:openai": "tsx --env-file=.env.local scripts/test-openai.ts"
   },
   "dependencies": {

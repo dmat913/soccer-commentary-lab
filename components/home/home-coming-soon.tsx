@@ -1,19 +1,10 @@
-import { BookMarked, Brain, FolderHeart, GraduationCap } from "lucide-react";
+import { Brain, FolderHeart } from "lucide-react";
 
 import { FadeIn } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
 
+/** Truly not shipped yet. Vocabulary / Quiz / Daily are live elsewhere on Home. */
 const upcomingFeatures = [
-  {
-    icon: BookMarked,
-    title: "Vocabulary Book",
-    description: "保存したフレーズを単語帳化",
-  },
-  {
-    icon: GraduationCap,
-    title: "Quiz Mode",
-    description: "英語実況クイズ",
-  },
   {
     icon: FolderHeart,
     title: "Favorite Collections",

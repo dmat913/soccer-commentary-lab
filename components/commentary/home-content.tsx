@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { CommentaryForm } from "@/components/commentary/commentary-form";
 import { CommentaryResults } from "@/components/commentary/commentary-results";
+import { AuthErrorBanner } from "@/components/auth/auth-error-banner";
+import { HomeAiDisclaimer } from "@/components/home/home-ai-disclaimer";
 import { HomeBuiltWith } from "@/components/home/home-built-with";
 import { HomeComingSoon } from "@/components/home/home-coming-soon";
 import { HomeEmptyExamples } from "@/components/home/home-empty-examples";
@@ -57,6 +59,8 @@ export function HomeContent() {
       <div className="space-y-4 sm:space-y-6">
         <HomeHero />
 
+        <AuthErrorBanner />
+
         <FadeIn delay={0.1} duration={0.55} y={16}>
           <div className="space-y-3">
             <CommentaryForm
@@ -71,6 +75,7 @@ export function HomeContent() {
                 onSelectExample={setJapaneseText}
               />
             ) : null}
+            <HomeAiDisclaimer />
           </div>
         </FadeIn>
       </div>

@@ -29,11 +29,16 @@ export type SitemapRoute = {
   priority: number;
 };
 
-/** 公開ページの sitemap 定義。ページ追加時はここに path を足してください。 */
+/**
+ * Public marketing / legal routes for search indexing.
+ * Personalized or app-shell routes (/favorites, /history, /quiz, /daily,
+ * /vocabulary) are intentionally omitted and marked noindex in their layouts.
+ */
 export const SITEMAP_ROUTES: SitemapRoute[] = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
-  { path: "/favorites", changeFrequency: "weekly", priority: 0.8 },
-  { path: "/history", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/privacy", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/terms", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/contact", changeFrequency: "monthly", priority: 0.3 },
 ];
 
 export function getCanonicalUrl(path: string): string {
