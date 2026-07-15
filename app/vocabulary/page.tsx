@@ -14,6 +14,7 @@ import {
   QUIZ_MIN_ITEMS,
 } from "@/lib/quiz/create-quiz-questions";
 import { QUIZ_RETURN_BANNER_KEY } from "@/lib/quiz/return-banner";
+import { cn } from "@/lib/utils";
 
 const EMPTY_STEPS = [
   "Homeで英語実況を作る",
@@ -123,7 +124,14 @@ export default function VocabularyPage() {
 
   return (
     <div className="min-h-full bg-gradient-to-b from-emerald-50/70 via-background to-background dark:from-emerald-950/30">
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+      <main
+        className={cn(
+          "mx-auto flex w-full min-w-0 flex-col px-4 py-10 sm:px-6 sm:py-12 lg:py-14",
+          hasItems
+            ? "max-w-7xl gap-3 sm:gap-4"
+            : "max-w-6xl gap-4"
+        )}
+      >
         <FadeIn>
           <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1.5">

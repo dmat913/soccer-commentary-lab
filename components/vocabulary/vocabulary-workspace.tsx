@@ -13,7 +13,13 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import {
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { toast } from "sonner";
 
 import { SpeechPlaybackButton } from "@/components/commentary/speech-playback-button";
@@ -23,13 +29,27 @@ import { VOCABULARY_MASTERY_STREAK } from "@/lib/vocabulary/learning";
 import {
   filterVocabularyItems,
   formatVocabularyReviewedAt,
+  formatVocabularyReviewRecency,
+  getVocabularyReviewRecommendations,
   vocabularyFilterEmptyCopy,
   vocabularyStatusFilterLabel,
   vocabularyStatusLabel,
   vocabularyStreakProgressLabel,
+  summarizeVocabularyLearning,
+  sortVocabularyItems,
+  vocabularySortOptionLabel,
+  isVocabularySortOption,
+  VOCABULARY_SORT_OPTIONS,
   VOCABULARY_STATUS_FILTERS,
+  type VocabularyLearningSummary,
   type VocabularyStatusFilter,
 } from "@/lib/vocabulary/display";
+import {
+  getServerVocabularySortPreferenceSnapshot,
+  getVocabularySortPreferenceSnapshot,
+  setVocabularySortPreference,
+  subscribeVocabularySortPreference,
+} from "@/lib/vocabulary/sort-preference";
 import { cn } from "@/lib/utils";
 import type {
   VocabularyItem,
@@ -113,6 +133,184 @@ function VocabularyStatusBadge({
     >
       {label}
     </span>
+  );
+}
+
+function VocabularyLearningDashboard({
+  summary,
+  className,
+}: {
+  summary: VocabularyLearningSummary;
+  className?: string;
+}) {
+  const stats = [
+    { label: "NEW", value: summary.newCount },
+    { label: "学習中", value: summary.learningCount },
+    { label: "習得済み", value: summary.masteredCount },
+  ] as const;
+
+  return (
+    <section
+      aria-label="学習ダッシュボード"
+      className={cn(
+        "rounded-2xl border border-emerald-100/80 bg-card/80 px-3.5 py-4 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:px-4",
+        className
+      )}
+    >
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+          Vocabulary
+        </p>
+        <p className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
+          {summary.total}{" "}
+          <span className="text-sm font-medium text-muted-foreground">
+            Expressions
+          </span>
+        </p>
+      </div>
+
+      <div
+        className="mt-3 border-t border-emerald-100/90 pt-3 dark:border-emerald-900/50"
+        role="list"
+      >
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-3">
+          {stats.map((stat) => (
+            <div key={stat.label} role="listitem" className="min-w-0 space-y-0.5">
+              <dt className="text-[11px] font-medium text-muted-foreground">
+                {stat.label}
+              </dt>
+              <dd className="text-xl font-semibold tracking-tight text-foreground tabular-nums">
+                {stat.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+
+function VocabularyTodayReview({
+  items,
+  selectedId,
+  onSelect,
+  className,
+}: {
+  items: readonly VocabularyItem[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  className?: string;
+}) {
+  const headingId = useId();
+  const listId = useId();
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className={cn(
+        "rounded-2xl border border-emerald-100/70 bg-card/60 px-3.5 py-3.5 dark:border-emerald-900/45 dark:bg-emerald-950/15 sm:px-4",
+        className
+      )}
+    >
+      <div className="space-y-1">
+        <h2
+          id={headingId}
+          className="text-sm font-semibold tracking-tight text-foreground"
+        >
+          今日の復習
+        </h2>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          学習中の表現と、まだ練習していない表現を優先しています。
+        </p>
+      </div>
+
+      <ul
+        id={listId}
+        aria-labelledby={headingId}
+        className="mt-2.5 divide-y divide-border/50"
+      >
+        {items.map((item) => {
+          const isSelected = item.id === selectedId;
+          const primary = listPrimaryLabel(item);
+          const recency = formatVocabularyReviewRecency(item.lastReviewedAt);
+          const statusLabel = vocabularyStatusLabel(item.status);
+
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => onSelect(item.id)}
+                aria-current={isSelected ? "true" : undefined}
+                aria-label={`${primary}、${statusLabel}、最終学習 ${recency}`}
+                className={cn(
+                  "flex w-full min-h-11 items-start justify-between gap-2 py-2.5 text-left transition-colors",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
+                  isSelected
+                    ? "text-emerald-950 dark:text-emerald-50"
+                    : "hover:text-foreground"
+                )}
+              >
+                <span className="min-w-0 flex-1 space-y-0.5">
+                  <span
+                    className={cn(
+                      "block text-sm font-medium tracking-tight break-words",
+                      isSelected
+                        ? "text-emerald-950 dark:text-emerald-50"
+                        : "text-foreground"
+                    )}
+                  >
+                    {primary}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    最終学習 · {recency}
+                  </span>
+                </span>
+                <VocabularyStatusBadge
+                  status={item.status}
+                  selected={isSelected}
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function VocabularyLearningAids({
+  summary,
+  reviewItems,
+  selectedId,
+  onSelectReview,
+  className,
+}: {
+  summary: VocabularyLearningSummary;
+  reviewItems: readonly VocabularyItem[];
+  selectedId: string | null;
+  onSelectReview: (id: string) => void;
+  className?: string;
+}) {
+  if (summary.total === 0 && reviewItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <aside
+      aria-label="学習の補助情報"
+      className={cn("flex min-w-0 flex-col gap-3", className)}
+    >
+      {summary.total > 0 ? (
+        <VocabularyLearningDashboard summary={summary} />
+      ) : null}
+      {reviewItems.length > 0 ? (
+        <VocabularyTodayReview
+          items={reviewItems}
+          selectedId={selectedId}
+          onSelect={onSelectReview}
+        />
+      ) : null}
+    </aside>
   );
 }
 
@@ -386,32 +584,55 @@ export function VocabularyWorkspace() {
   const searchInputId = useId();
   const listboxId = useId();
   const statusFilterId = useId();
+  const sortSelectId = useId();
+  const workspaceRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<VocabularyStatusFilter>("all");
+  const sortOption = useSyncExternalStore(
+    subscribeVocabularySortPreference,
+    getVocabularySortPreferenceSnapshot,
+    getServerVocabularySortPreferenceSnapshot
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
-  const filteredItems = useMemo(
-    () => filterVocabularyItems(vocabularyItems, query, statusFilter),
-    [vocabularyItems, query, statusFilter]
+  const filteredItems = useMemo(() => {
+    const filtered = filterVocabularyItems(
+      vocabularyItems,
+      query,
+      statusFilter
+    );
+    return sortVocabularyItems(filtered, sortOption);
+  }, [vocabularyItems, query, statusFilter, sortOption]);
+
+  const learningSummary = useMemo(
+    () => summarizeVocabularyLearning(vocabularyItems),
+    [vocabularyItems]
   );
 
+  const reviewRecommendations = useMemo(
+    () => getVocabularyReviewRecommendations(vocabularyItems),
+    [vocabularyItems]
+  );
+
+  // Prefer an explicit selection that still exists in the snapshot so review
+  // candidates remain openable even when search/filter hide them from the list.
   const activeSelectedId = useMemo(() => {
-    if (filteredItems.length === 0) {
-      return null;
-    }
     if (
       selectedId &&
-      filteredItems.some((item) => item.id === selectedId)
+      vocabularyItems.some((item) => item.id === selectedId)
     ) {
       return selectedId;
     }
+    if (filteredItems.length === 0) {
+      return null;
+    }
     return filteredItems[0].id;
-  }, [filteredItems, selectedId]);
+  }, [filteredItems, selectedId, vocabularyItems]);
 
   const selectedItem =
-    filteredItems.find((item) => item.id === activeSelectedId) ?? null;
+    vocabularyItems.find((item) => item.id === activeSelectedId) ?? null;
   const isSearching = query.trim().length > 0;
   const isFiltering = statusFilter !== "all";
   const resultCountLabel =
@@ -426,6 +647,24 @@ export function VocabularyWorkspace() {
   function handleSelect(id: string) {
     setSelectedId(id);
     setMobileShowDetail(true);
+  }
+
+  function handleSelectReviewCandidate(id: string) {
+    const item = vocabularyItems.find((entry) => entry.id === id);
+    if (!item) {
+      return;
+    }
+    // Status filter can hide the candidate from the list; widen to「すべて」
+    // so desktop list selection stays in sync. Keep the search query intact.
+    if (statusFilter !== "all" && item.status !== statusFilter) {
+      setStatusFilter("all");
+    }
+    setSelectedId(id);
+    setMobileShowDetail(true);
+    workspaceRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }
 
   function handleRemove(id: string) {
@@ -452,205 +691,264 @@ export function VocabularyWorkspace() {
   }
 
   return (
-    <div
-      className={cn(
-        "flex flex-col rounded-2xl border border-emerald-100/80 bg-card/80 dark:border-emerald-900/50 dark:bg-emerald-950/20",
-        // Desktop: right column sets height; left list scrolls inside that height.
-        // Mobile: natural stacked height (no fixed height).
-        "md:grid md:min-h-[22rem] md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"
-      )}
-    >
-      <aside
+    <div className="flex min-w-0 flex-col gap-3">
+      {/* Mobile / tablet: aids above the workspace (hidden on xl 3-column). */}
+      <VocabularyLearningAids
+        summary={learningSummary}
+        reviewItems={reviewRecommendations}
+        selectedId={activeSelectedId}
+        onSelectReview={handleSelectReviewCandidate}
+        className="xl:hidden"
+      />
+
+      <div
+        ref={workspaceRef}
         className={cn(
-          "flex w-full min-w-0 flex-col border-emerald-100/80 dark:border-emerald-900/50 md:border-r",
-          // h-0 + min-h-full: match right-column height without expanding the grid row.
-          "md:h-0 md:min-h-full md:overflow-hidden",
-          mobileShowDetail ? "hidden md:flex" : "flex"
+          "grid min-w-0 grid-cols-1",
+          "rounded-2xl border border-emerald-100/80 bg-card/80",
+          "dark:border-emerald-900/50 dark:bg-emerald-950/20",
+          // md–lg: 2-column list + detail card.
+          "md:min-h-[26rem] md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] md:overflow-hidden",
+          // xl+: 3-column — row height follows the center detail; columns stretch.
+          "xl:min-h-0 xl:grid-cols-[minmax(14rem,0.28fr)_minmax(20rem,1fr)_minmax(14rem,0.24fr)]",
+          "xl:items-stretch xl:gap-4 xl:overflow-visible xl:rounded-none xl:border-0 xl:bg-transparent",
+          "dark:xl:bg-transparent"
         )}
-        aria-label="語彙一覧"
       >
-        <div className="shrink-0 space-y-3 border-b border-emerald-100/80 p-4 dark:border-emerald-900/50">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-foreground">保存した表現</p>
-            <p className="text-xs leading-relaxed text-muted-foreground">
+        <aside
+          className={cn(
+            "flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden",
+            "border-emerald-100/80 dark:border-emerald-900/50",
+            // Match the grid row height (set by center detail), then scroll the list.
+            "md:h-0 md:min-h-full md:border-r",
+            "xl:rounded-2xl xl:border xl:border-emerald-100/80 xl:bg-card/80",
+            "dark:xl:border-emerald-900/50 dark:xl:bg-emerald-950/20",
+            mobileShowDetail ? "hidden md:flex" : "flex"
+          )}
+          aria-label="語彙一覧"
+        >
+          <div className="shrink-0 space-y-2.5 border-b border-emerald-100/80 p-3 dark:border-emerald-900/50 xl:space-y-2 xl:p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-sm font-semibold text-foreground">保存した表現</p>
+              <p
+                className="shrink-0 text-xs text-muted-foreground tabular-nums"
+                aria-live="polite"
+              >
+                {resultCountLabel}
+              </p>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground xl:hidden">
               一覧から選んで詳細を確認できます
             </p>
-          </div>
 
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <input
-              id={searchInputId}
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="英語・意味・日本語で検索"
-              aria-label="単語帳を検索"
-              aria-controls={listboxId}
-              className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent py-2 pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            />
-          </div>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground xl:size-3.5"
+                aria-hidden="true"
+              />
+              <input
+                id={searchInputId}
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="英語・意味・日本語で検索"
+                aria-label="単語帳を検索"
+                aria-controls={listboxId}
+                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent py-1.5 pr-3 pl-8 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 xl:h-9 dark:bg-input/30"
+              />
+            </div>
 
-          <div>
-            <p
-              id={statusFilterId}
-              className="mb-2 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase"
-            >
-              ステータス
-            </p>
-            <div
-              role="radiogroup"
-              aria-labelledby={statusFilterId}
-              className="grid grid-cols-2 gap-1.5"
-            >
-              {VOCABULARY_STATUS_FILTERS.map((filter) => {
-                const selected = statusFilter === filter;
-                return (
-                  <button
-                    key={filter}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setStatusFilter(filter)}
-                    className={cn(
-                      "min-h-10 rounded-lg border px-2 py-2 text-center text-xs font-medium transition-colors",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
-                      selected
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-50"
-                        : "border-border/70 bg-background/60 text-muted-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    {vocabularyStatusFilterLabel(filter)}
-                  </button>
-                );
-              })}
+            <div>
+              <p
+                id={statusFilterId}
+                className="mb-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase"
+              >
+                ステータス
+              </p>
+              <div
+                role="radiogroup"
+                aria-labelledby={statusFilterId}
+                className="grid grid-cols-2 gap-1.5"
+              >
+                {VOCABULARY_STATUS_FILTERS.map((filter) => {
+                  const selected = statusFilter === filter;
+                  return (
+                    <button
+                      key={filter}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setStatusFilter(filter)}
+                      className={cn(
+                        "min-h-10 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-colors xl:min-h-9",
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
+                        selected
+                          ? "border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-50"
+                          : "border-border/70 bg-background/60 text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {vocabularyStatusFilterLabel(filter)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label
+                htmlFor={sortSelectId}
+                className="text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase"
+              >
+                並び替え
+              </label>
+              <select
+                id={sortSelectId}
+                value={sortOption}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (!isVocabularySortOption(next)) {
+                    return;
+                  }
+                  setVocabularySortPreference(next);
+                }}
+                aria-label="Vocabularyの並び替え"
+                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 xl:h-9 dark:bg-input/30"
+              >
+                {VOCABULARY_SORT_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {vocabularySortOptionLabel(option)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <p
-            className="text-xs text-muted-foreground tabular-nums"
-            aria-live="polite"
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-label="Vocabulary一覧"
+            className="min-h-0 flex-1 overflow-y-auto"
           >
-            {resultCountLabel}
-          </p>
-        </div>
+            {filteredItems.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                <BookMarked
+                  className="size-5 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <p className="text-sm font-medium text-foreground">
+                  {emptyCopy.title}
+                </p>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {emptyCopy.description}
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border/60 p-1.5">
+                {filteredItems.map((item) => {
+                  const isSelected = item.id === activeSelectedId;
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => handleSelect(item.id)}
+                        className={cn(
+                          "flex w-full flex-col gap-1 rounded-xl px-3 py-2.5 text-left transition-colors xl:gap-0.5 xl:py-2",
+                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
+                          isSelected
+                            ? "bg-emerald-50 text-emerald-950 ring-1 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-50 dark:ring-emerald-800/70"
+                            : "hover:bg-muted/60"
+                        )}
+                      >
+                        <span className="flex min-w-0 items-start justify-between gap-2">
+                          <span
+                            className={cn(
+                              "line-clamp-2 min-w-0 flex-1 text-sm font-semibold tracking-tight",
+                              isSelected
+                                ? "text-emerald-950 dark:text-emerald-50"
+                                : "text-foreground"
+                            )}
+                          >
+                            {listPrimaryLabel(item)}
+                          </span>
+                          <VocabularyStatusBadge
+                            status={item.status}
+                            selected={isSelected}
+                          />
+                        </span>
+                        <span className="line-clamp-1 text-xs text-muted-foreground">
+                          {listSecondaryLabel(item)}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </aside>
 
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label="Vocabulary一覧"
-          className="min-h-0 flex-1 overflow-y-auto"
+        <section
+          className={cn(
+            "min-w-0 min-h-0 flex-col p-4 pb-6 sm:p-5",
+            // xl: own card; natural page flow (no internal scroll). Sizes the grid row.
+            "xl:rounded-2xl xl:border xl:border-emerald-100/80 xl:bg-card/80",
+            "dark:xl:border-emerald-900/50 dark:xl:bg-emerald-950/20",
+            mobileShowDetail ? "flex" : "hidden md:flex"
+          )}
+          aria-label="選択した表現の詳細"
         >
-          {filteredItems.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+          <div className="mb-3 md:hidden">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToList}
+              className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              一覧へ戻る
+            </Button>
+          </div>
+
+          {selectedItem ? (
+            <VocabularyDetail
+              item={selectedItem}
+              onRemove={() => handleRemove(selectedItem.id)}
+              onMarkStillLearning={() =>
+                handleMarkStillLearning(selectedItem.id)
+              }
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
               <BookMarked
                 className="size-5 text-muted-foreground"
                 aria-hidden="true"
               />
               <p className="text-sm font-medium text-foreground">
-                {emptyCopy.title}
+                {vocabularyItems.length === 0
+                  ? "詳細を表示する表現がありません"
+                  : emptyCopy.title}
               </p>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {emptyCopy.description}
+              <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+                {vocabularyItems.length === 0
+                  ? "左の一覧から学習したい表現を選ぶと、ここに詳細が表示されます。"
+                  : emptyCopy.description}
               </p>
             </div>
-          ) : (
-            <ul className="divide-y divide-border/60 p-1.5">
-              {filteredItems.map((item) => {
-                const isSelected = item.id === activeSelectedId;
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      onClick={() => handleSelect(item.id)}
-                      className={cn(
-                        "flex w-full flex-col gap-1 rounded-xl px-3 py-2.5 text-left transition-colors",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500",
-                        isSelected
-                          ? "bg-emerald-50 text-emerald-950 ring-1 ring-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-50 dark:ring-emerald-800/70"
-                          : "hover:bg-muted/60"
-                      )}
-                    >
-                      <span className="flex min-w-0 items-start justify-between gap-2">
-                        <span
-                          className={cn(
-                            "line-clamp-2 min-w-0 flex-1 text-sm font-semibold tracking-tight",
-                            isSelected
-                              ? "text-emerald-950 dark:text-emerald-50"
-                              : "text-foreground"
-                          )}
-                        >
-                          {listPrimaryLabel(item)}
-                        </span>
-                        <VocabularyStatusBadge
-                          status={item.status}
-                          selected={isSelected}
-                        />
-                      </span>
-                      <span className="line-clamp-1 text-xs text-muted-foreground">
-                        {listSecondaryLabel(item)}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
           )}
-        </div>
-      </aside>
+        </section>
 
-      <section
-        className={cn(
-          "min-w-0 flex-col p-4 pb-6 sm:p-5",
-          mobileShowDetail ? "flex" : "hidden md:flex"
-        )}
-        aria-label="選択した表現の詳細"
-      >
-        <div className="mb-3 md:hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleBackToList}
-            className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            一覧へ戻る
-          </Button>
-        </div>
-
-        {selectedItem ? (
-          <VocabularyDetail
-            item={selectedItem}
-            onRemove={() => handleRemove(selectedItem.id)}
-            onMarkStillLearning={() =>
-              handleMarkStillLearning(selectedItem.id)
-            }
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-            <BookMarked
-              className="size-5 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <p className="text-sm font-medium text-foreground">
-              {vocabularyItems.length === 0
-                ? "詳細を表示する表現がありません"
-                : emptyCopy.title}
-            </p>
-            <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-              {vocabularyItems.length === 0
-                ? "左の一覧から学習したい表現を選ぶと、ここに詳細が表示されます。"
-                : emptyCopy.description}
-            </p>
-          </div>
-        )}
-      </section>
+        {/* xl desktop: learning aids as the right column (not shown on mobile detail). */}
+        <VocabularyLearningAids
+          summary={learningSummary}
+          reviewItems={reviewRecommendations}
+          selectedId={activeSelectedId}
+          onSelectReview={handleSelectReviewCandidate}
+          className="hidden h-full min-h-0 xl:flex"
+        />
+      </div>
     </div>
   );
 }
