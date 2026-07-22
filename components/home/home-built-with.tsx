@@ -1,4 +1,4 @@
-import { FadeIn } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/fade-in";
 
 const technologies = ["OpenAI", "Next.js", "Supabase"] as const;
 

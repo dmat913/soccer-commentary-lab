@@ -24,46 +24,66 @@ function markFavoritesSynced(userId: string): void {
 
 export type SyncLocalFavoritesResult = {
   inserted: number;
+  enriched: number;
   skipped: boolean;
 };
 
 /**
  * Merges localStorage favorites into Supabase for the given user.
- * Does not delete local or remote data. Dedupes by english text (`FavoriteTranslation.text`).
- * Sets the synced flag only after all inserts succeed.
+ * - Inserts rows missing by english text (never duplicates).
+ * - When remote exists but content fields are empty and local has values, fills those fields only.
+ * - Does not overwrite non-empty remote values.
+ * - Sets the synced flag only after inserts/enrichment succeed.
+ *
+ * Already-synced users still run enrichment (and missing inserts) so older
+ * remote rows can receive meaning / explanation / learning-point meaning.
  */
 export async function syncLocalFavoritesToSupabase(
   userId: string,
   supabaseRepo: SupabaseFavoritesRepository
 ): Promise<SyncLocalFavoritesResult> {
   if (typeof window === "undefined") {
-    return { inserted: 0, skipped: true };
-  }
-
-  if (isFavoritesSynced(userId)) {
-    return { inserted: 0, skipped: true };
+    return { inserted: 0, enriched: 0, skipped: true };
   }
 
   try {
     const localFavorites = localFavoritesRepository.getSnapshot();
     const remoteFavorites = await supabaseRepo.fetchAll();
-    const remoteTexts = new Set(
-      remoteFavorites.map((favorite) => favorite.text.trim()).filter(Boolean)
+    const remoteByText = new Map(
+      remoteFavorites
+        .map((favorite) => [favorite.text.trim(), favorite] as const)
+        .filter(([text]) => text.length > 0)
     );
 
-    const toInsert = localFavorites.filter((favorite) => {
-      const text = favorite.text.trim();
-      return text.length > 0 && !remoteTexts.has(text);
-    });
+    let inserted = 0;
+    let enriched = 0;
 
-    for (const favorite of toInsert) {
-      await supabaseRepo.insertFavorite(favorite);
+    for (const favorite of localFavorites) {
+      const text = favorite.text.trim();
+      if (!text) {
+        continue;
+      }
+
+      const remote = remoteByText.get(text);
+      if (!remote) {
+        await supabaseRepo.insertFavorite(favorite);
+        inserted += 1;
+        continue;
+      }
+
+      const didEnrich = await supabaseRepo.enrichFavoriteFromLocal(
+        remote,
+        favorite
+      );
+      if (didEnrich) {
+        enriched += 1;
+      }
     }
 
     await supabaseRepo.fetchAll();
     markFavoritesSynced(userId);
 
-    return { inserted: toInsert.length, skipped: false };
+    return { inserted, enriched, skipped: false };
   } catch (error) {
     logSupabaseRepositoryError(
       "[syncLocalFavoritesToSupabase] sync failed",

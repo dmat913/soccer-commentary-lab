@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
-  title: `Quiz | ${SITE_NAME}`,
+  title: `Practice Quiz | ${SITE_NAME}`,
   description: SITE_DESCRIPTION,
   robots: {
     index: false,

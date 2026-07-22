@@ -6,6 +6,13 @@ import type {
   DailyChallenge,
   StartDailyChallengeInput,
 } from "@/types/daily-challenge";
+import type {
+  DiscoverHeardToggleResult,
+  DiscoverPost,
+  DiscoverPublishedPost,
+  DiscoverPublishResult,
+  DiscoverSaveResult,
+} from "@/types/discover";
 import type { FavoriteTranslation } from "@/types/favorite";
 import type { CommentaryHistoryItem } from "@/types/history";
 import type { VocabularyAddEntry, VocabularyItem } from "@/types/vocabulary";
@@ -52,6 +59,36 @@ export interface VocabularyRepository {
   applyAnswer(id: string, isCorrect: boolean): VocabularyItem[];
   /** User demotion: mastered (or any status) → learning with streak 0. */
   markStillLearning(id: string): VocabularyItem[];
+}
+
+/**
+ * Discover feed reads, author publish/unpublish, Heard reactions,
+ * and Vocabulary membership saves (discover_saves).
+ */
+export interface DiscoverRepository {
+  listPosts(): Promise<DiscoverPost[]>;
+  getTrendingPosts(): Promise<DiscoverPost[]>;
+  getNewestPosts(): Promise<DiscoverPost[]>;
+  getPopularPosts(): Promise<DiscoverPost[]>;
+  listMyPosts(userId: string): Promise<DiscoverPublishedPost[]>;
+  isPublished(userId: string, englishText: string): Promise<boolean>;
+  publishPost(
+    favorite: FavoriteTranslation,
+    userId: string
+  ): Promise<DiscoverPublishResult>;
+  deletePost(postId: string, userId: string): Promise<void>;
+  listMyHeardPostIds(userId: string): Promise<string[]>;
+  markPostAsHeard(
+    postId: string,
+    userId: string
+  ): Promise<DiscoverHeardToggleResult>;
+  unmarkPostAsHeard(postId: string, userId: string): Promise<void>;
+  listMySavedPostIds(userId: string): Promise<string[]>;
+  markPostAsSaved(
+    postId: string,
+    userId: string
+  ): Promise<DiscoverSaveResult>;
+  unmarkPostAsSaved(postId: string, userId: string): Promise<void>;
 }
 
 /**

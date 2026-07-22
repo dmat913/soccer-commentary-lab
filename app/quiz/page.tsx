@@ -1,21 +1,36 @@
 "use client";
 
-import { ArrowLeft, BookMarked, Plus } from "lucide-react";
+import { ArrowLeft, AlertCircle, BookMarked } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useReducer } from "react";
+import { useEffect, useMemo, useReducer, type ReactNode } from "react";
 
+import { QuizLeaveDialog } from "@/components/quiz/quiz-leave-dialog";
+import { useQuizLeaveGuardRegistration } from "@/components/quiz/quiz-leave-guard-provider";
 import { QuizProgress } from "@/components/quiz/quiz-progress";
 import { QuizQuestionCard } from "@/components/quiz/quiz-question-card";
 import { QuizResult } from "@/components/quiz/quiz-result";
 import { Button } from "@/components/ui/button";
-import { FadeIn } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/fade-in";
+import { useQuizLeaveGuard } from "@/hooks/use-quiz-leave-guard";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import {
+  emptyStateIconClassName,
+  pageShellClassName,
+} from "@/lib/design/surfaces";
+import { shouldEnableQuizLeaveGuard } from "@/lib/quiz/leave-guard";
+import {
+  QUIZ_MAX_QUESTIONS,
   QUIZ_MIN_ITEMS,
   createQuizQuestions,
 } from "@/lib/quiz/create-quiz-questions";
 import { getVocabularyUpdateForQuizAnswer } from "@/lib/quiz/vocabulary-learning";
 import type { QuizQuestion, QuizSessionResult } from "@/types/quiz";
+
+const QUIZ_META_ITEMS = [
+  `${QUIZ_MAX_QUESTIONS}問`,
+  "約2分",
+  "単語帳から出題",
+] as const;
 
 type SessionState = {
   questions: QuizQuestion[];
@@ -96,18 +111,73 @@ function sessionReducer(
   }
 }
 
-const backToVocabulary = (
-  <Button
-    variant="ghost"
-    size="sm"
-    nativeButton={false}
-    render={<Link href="/vocabulary" />}
-    className="h-9 gap-1.5 self-start rounded-full px-3 text-muted-foreground hover:text-foreground"
-  >
-    <ArrowLeft className="size-4" aria-hidden="true" />
-    単語帳へ戻る
-  </Button>
-);
+const mainClassName =
+  "mx-auto flex w-full min-w-0 max-w-xl flex-col gap-3 px-4 py-6 pb-8 sm:gap-3.5 sm:px-6 sm:py-8";
+
+function QuizPageShell({
+  leaveGuard,
+  children,
+}: {
+  leaveGuard: {
+    isDialogOpen: boolean;
+    cancelLeave: () => void;
+    confirmLeave: () => void;
+  };
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <QuizLeaveDialog
+        isOpen={leaveGuard.isDialogOpen}
+        onContinue={leaveGuard.cancelLeave}
+        onLeave={leaveGuard.confirmLeave}
+      />
+      {children}
+    </>
+  );
+}
+
+function createBackToVocabulary(onNavigate: (href: string) => void) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      type="button"
+      onClick={() => onNavigate("/vocabulary")}
+      className="h-8 gap-1.5 self-start rounded-full px-2.5 text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="size-3.5" aria-hidden="true" />
+      単語帳へ戻る
+    </Button>
+  );
+}
+
+function QuizLoadingSkeleton({ message }: { message: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="space-y-3"
+    >
+      <span className="sr-only">{message}</span>
+      <div className="h-1.5 w-full animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+      <div className="space-y-2 rounded-xl border border-border/70 bg-card px-3.5 py-3 shadow-xs">
+        <div className="h-2.5 w-20 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        <div className="h-5 w-4/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        <div className="h-3 w-2/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+      </div>
+      <div className="space-y-2">
+        {[0, 1, 2, 3].map((index) => (
+          <div
+            key={index}
+            className="h-12 animate-pulse rounded-xl border border-border/50 bg-muted/40 motion-reduce:animate-none"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function QuizPage() {
   const {
@@ -117,8 +187,23 @@ export default function QuizPage() {
   } = useVocabulary();
   const [session, dispatch] = useReducer(sessionReducer, null);
 
+  const leaveGuardEnabled = shouldEnableQuizLeaveGuard(
+    session?.phase === "active" ? session : null
+  );
+  const leaveGuard = useQuizLeaveGuard(leaveGuardEnabled);
+  useQuizLeaveGuardRegistration(leaveGuard);
+  const backToVocabulary = createBackToVocabulary(leaveGuard.requestNavigation);
+
   const eligibleCount = vocabularyItems.length;
   const canStart = eligibleCount >= QUIZ_MIN_ITEMS;
+  const preparedQuestions = useMemo(() => {
+    if (session || isVocabularyLoading || !canStart) {
+      return null;
+    }
+    return createQuizQuestions(vocabularyItems);
+  }, [session, isVocabularyLoading, canStart, vocabularyItems]);
+  const generationFailed =
+    preparedQuestions !== null && preparedQuestions.length === 0;
 
   function handleAnswer(optionId: string) {
     const vocabularyUpdate = getVocabularyUpdateForQuizAnswer(session, optionId);
@@ -136,22 +221,6 @@ export default function QuizPage() {
     }
   }
 
-  // Start a session once the vocabulary is large enough. Guarded so a running
-  // or finished session is never reset by vocabulary updates.
-  useEffect(() => {
-    if (session) {
-      return;
-    }
-    if (!canStart) {
-      return;
-    }
-    const questions = createQuizQuestions(vocabularyItems);
-    if (questions.length > 0) {
-      dispatch({ type: "start", questions });
-    }
-  }, [session, canStart, vocabularyItems]);
-
-  // Keyboard shortcuts: 1-4 select an answer while a question is unanswered.
   useEffect(() => {
     if (!session || session.phase !== "active" || session.selectedOptionId) {
       return;
@@ -194,10 +263,6 @@ export default function QuizPage() {
     }
   }
 
-  const shellClassName =
-    "min-h-full bg-gradient-to-b from-emerald-50/70 via-background to-background dark:from-emerald-950/30";
-
-  // Result screen.
   if (session && session.phase === "result") {
     const result: QuizSessionResult = {
       total: session.questions.length,
@@ -211,104 +276,203 @@ export default function QuizPage() {
     };
 
     return (
-      <div className={shellClassName}>
-        <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-12">
-          {backToVocabulary}
-          <FadeIn>
-            <QuizResult result={result} onRetry={handleRetry} />
-          </FadeIn>
-        </main>
-      </div>
+      <QuizPageShell leaveGuard={leaveGuard}>
+        <div className={pageShellClassName}>
+          <main className={mainClassName}>
+            {backToVocabulary}
+            <FadeIn>
+              <QuizResult result={result} onRetry={handleRetry} />
+            </FadeIn>
+          </main>
+        </div>
+      </QuizPageShell>
     );
   }
 
-  // Active quiz.
   if (session) {
     const question = session.questions[session.index];
     const answeredCount = session.correct + session.incorrect;
 
     return (
-      <div className={shellClassName}>
-        <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-12">
-          {backToVocabulary}
-          <QuizProgress
-            current={session.index + 1}
-            total={session.questions.length}
-            answered={answeredCount}
-            streak={session.currentStreak}
-          />
-          <QuizQuestionCard
-            key={question.id}
-            question={question}
-            selectedOptionId={session.selectedOptionId}
-            isLast={session.index + 1 >= session.questions.length}
-            streak={session.currentStreak}
-            onSelect={handleAnswer}
-            onNext={() => dispatch({ type: "next" })}
-          />
-        </main>
-      </div>
+      <QuizPageShell leaveGuard={leaveGuard}>
+        <div className={pageShellClassName}>
+          <main className={mainClassName}>
+            {backToVocabulary}
+            <QuizProgress
+              label="Practice Quiz"
+              current={session.index + 1}
+              total={session.questions.length}
+              answered={answeredCount}
+              streak={session.currentStreak}
+            />
+            <QuizQuestionCard
+              key={question.id}
+              question={question}
+              selectedOptionId={session.selectedOptionId}
+              isLast={session.index + 1 >= session.questions.length}
+              streak={session.currentStreak}
+              onSelect={handleAnswer}
+              onNext={() => dispatch({ type: "next" })}
+            />
+          </main>
+        </div>
+      </QuizPageShell>
     );
   }
 
-  // No session yet.
   if (isVocabularyLoading) {
     return (
-      <div className={shellClassName}>
-        <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-12">
-          {backToVocabulary}
-          <p
-            role="status"
-            aria-live="polite"
-            className="py-10 text-center text-sm text-muted-foreground"
-          >
-            単語帳を読み込んでいます…
-          </p>
-        </main>
-      </div>
+      <QuizPageShell leaveGuard={leaveGuard}>
+        <div className={pageShellClassName}>
+          <main className={mainClassName}>
+            {backToVocabulary}
+            <QuizLoadingSkeleton message="単語帳を読み込んでいます…" />
+          </main>
+        </div>
+      </QuizPageShell>
     );
   }
 
-  // Brief wait while the start effect creates the session from eligible items.
+  if (generationFailed) {
+    return (
+      <QuizPageShell leaveGuard={leaveGuard}>
+        <div className={pageShellClassName}>
+          <main className={mainClassName}>
+            {backToVocabulary}
+            <FadeIn>
+              <div
+                role="alert"
+                className="flex flex-col items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/[0.04] px-4 py-8 text-center dark:border-destructive/30 dark:bg-destructive/10 sm:py-10"
+              >
+                <div className="flex size-10 items-center justify-center rounded-xl bg-muted/70 text-muted-foreground">
+                  <AlertCircle className="size-5" aria-hidden="true" />
+                </div>
+                <div className="space-y-1">
+                  <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                    クイズを準備できませんでした
+                  </h1>
+                  <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
+                    もう一度お試しください。問題が続く場合は単語帳からやり直してください。
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  nativeButton={false}
+                  render={<Link href="/vocabulary" />}
+                  className="h-11 rounded-full px-5"
+                >
+                  <BookMarked className="size-4" aria-hidden="true" />
+                  単語帳へ戻る
+                </Button>
+              </div>
+            </FadeIn>
+          </main>
+        </div>
+      </QuizPageShell>
+    );
+  }
+
+  if (canStart && preparedQuestions && preparedQuestions.length > 0) {
+    return (
+      <QuizPageShell leaveGuard={leaveGuard}>
+        <div className={pageShellClassName}>
+          <main className={mainClassName}>
+            {backToVocabulary}
+            <FadeIn>
+              <div className="flex flex-col items-center gap-4 rounded-xl border border-border/60 bg-card/60 px-4 py-8 text-center sm:py-10">
+                <div className={emptyStateIconClassName}>
+                  <BookMarked className="size-5" aria-hidden="true" />
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                    Practice Quiz
+                  </h1>
+                  <ul
+                    className="flex flex-wrap items-center justify-center gap-1.5"
+                    aria-label="クイズの概要"
+                  >
+                    {QUIZ_META_ITEMS.map((item) => (
+                      <li
+                        key={item}
+                        className="rounded-md border border-border/70 bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={() =>
+                    dispatch({ type: "start", questions: preparedQuestions })
+                  }
+                  className="h-11 rounded-full px-5"
+                >
+                  開始する
+                </Button>
+              </div>
+            </FadeIn>
+          </main>
+        </div>
+      </QuizPageShell>
+    );
+  }
+
   if (canStart) {
     return (
-      <div className={shellClassName}>
-        <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-12">
-          {backToVocabulary}
-          <p
-            role="status"
-            aria-live="polite"
-            className="py-10 text-center text-sm text-muted-foreground"
-          >
-            クイズを準備しています…
-          </p>
-        </main>
-      </div>
+      <QuizPageShell leaveGuard={leaveGuard}>
+        <div className={pageShellClassName}>
+          <main className={mainClassName}>
+            {backToVocabulary}
+            <QuizLoadingSkeleton message="クイズを準備しています…" />
+          </main>
+        </div>
+      </QuizPageShell>
     );
   }
 
-  // Not enough items to start.
   const remaining = Math.max(0, QUIZ_MIN_ITEMS - eligibleCount);
 
   return (
-    <div className={shellClassName}>
-      <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-12">
-        {backToVocabulary}
-        <FadeIn>
-          <div className="flex flex-col items-center gap-4 rounded-3xl border border-border/60 bg-card/60 px-5 py-10 text-center sm:py-14">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
-              <BookMarked className="size-6" aria-hidden="true" />
-            </span>
-            <div className="space-y-1.5">
-              <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                Quizには単語帳が{QUIZ_MIN_ITEMS}件以上必要です
-              </h1>
-              <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
-                現在の保存は {eligibleCount}件です。あと {remaining}件保存すると
-                Quizに挑戦できます。
-              </p>
-            </div>
-            <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row">
+    <QuizPageShell leaveGuard={leaveGuard}>
+      <div className={pageShellClassName}>
+        <main className={mainClassName}>
+          {backToVocabulary}
+          <FadeIn>
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-border/60 bg-card/60 px-4 py-8 text-center sm:py-10">
+              <div className={emptyStateIconClassName}>
+                <BookMarked className="size-5" aria-hidden="true" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                  Practice Quiz
+                </h1>
+                <ul
+                  className="flex flex-wrap items-center justify-center gap-1.5"
+                  aria-label="クイズの概要"
+                >
+                  {QUIZ_META_ITEMS.map((item) => (
+                    <li
+                      key={item}
+                      className="rounded-md border border-border/70 bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  Quizには単語帳が{QUIZ_MIN_ITEMS}件以上必要です。現在{" "}
+                  <span className="font-semibold text-foreground tabular-nums">
+                    {eligibleCount}
+                  </span>
+                  件 · あと{" "}
+                  <span className="font-semibold text-foreground tabular-nums">
+                    {remaining}
+                  </span>
+                  件で開始できます。
+                </p>
+              </div>
               <Button
                 size="lg"
                 nativeButton={false}
@@ -318,20 +482,10 @@ export default function QuizPage() {
                 <BookMarked className="size-4" aria-hidden="true" />
                 単語帳へ戻る
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                nativeButton={false}
-                render={<Link href="/" />}
-                className="h-11 rounded-full px-5"
-              >
-                <Plus className="size-4" aria-hidden="true" />
-                Homeで表現を追加する
-              </Button>
             </div>
-          </div>
-        </FadeIn>
-      </main>
-    </div>
+          </FadeIn>
+        </main>
+      </div>
+    </QuizPageShell>
   );
 }

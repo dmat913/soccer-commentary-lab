@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { FadeIn } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/fade-in";
 import { CONTACT_EMAIL, getContactMailtoHref } from "@/lib/site/contact";
 import { getCanonicalUrl, SITE_NAME } from "@/lib/seo/site";
 

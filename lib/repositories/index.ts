@@ -1,4 +1,8 @@
 import {
+  createSupabaseDiscoverRepository,
+  type SupabaseDiscoverRepository,
+} from "@/lib/repositories/discover.supabase";
+import {
   createSupabaseFavoritesRepository,
   type SupabaseFavoritesRepository,
 } from "@/lib/repositories/favorites.supabase";
@@ -20,10 +24,13 @@ import {
 } from "@/lib/repositories/vocabulary.supabase";
 import type {
   DailyChallengeRepository,
+  DiscoverRepository,
   FavoritesRepository,
   HistoryRepository,
   VocabularyRepository,
 } from "@/lib/repositories/types";
+
+let supabaseDiscoverRepository: SupabaseDiscoverRepository | null = null;
 
 const supabaseFavoritesRepositories = new Map<
   string,
@@ -44,6 +51,18 @@ const supabaseDailyChallengeRepositories = new Map<
   string,
   SupabaseDailyChallengeRepository
 >();
+
+/**
+ * Discover repository for public reads and authenticated author operations.
+ * User ownership is passed to write methods and enforced by Supabase RLS.
+ */
+export function getDiscoverRepository(): DiscoverRepository {
+  if (!supabaseDiscoverRepository) {
+    supabaseDiscoverRepository = createSupabaseDiscoverRepository();
+  }
+
+  return supabaseDiscoverRepository;
+}
 
 export function getFavoritesRepository(
   userId?: string | null

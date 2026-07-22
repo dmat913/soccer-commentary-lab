@@ -1,6 +1,6 @@
 import { Brain, FolderHeart } from "lucide-react";
 
-import { FadeIn } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/fade-in";
 import { cn } from "@/lib/utils";
 
 /** Truly not shipped yet. Vocabulary / Quiz / Daily are live elsewhere on Home. */

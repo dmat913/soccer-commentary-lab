@@ -8,7 +8,8 @@ KickLingo は、日本語のサッカー実況を入力すると、Premier Leagu
 - 各候補に意味・**表現の解説**・重要単語を表示
 - **英語読み上げ**（ブラウザ標準 `SpeechSynthesis`、APIキー不要）
 - 音声入力（`SpeechRecognition`）
-- お気に入り・履歴（localStorage）
+- お気に入り・履歴・単語帳（localStorage / ログイン時は Supabase）
+- Discover（公開実況フィード）・Practice Quiz（最大5問）・今日のChallenge（1問）
 - YouTube で実況動画を検索
 
 ## セットアップ
@@ -59,12 +60,15 @@ Vercel の **Environment Variables** に以下を追加します。
 ```bash
 npm run dev          # 開発サーバー
 npm run build        # 本番ビルド
+npm run start        # 本番サーバー（build 後）
+npm test             # ユニットテスト
+npm run lint         # ESLint
 npm run test:openai  # OpenAI 接続テスト
 ```
 
 ## 技術スタック
 
-Next.js 16 (App Router) / TypeScript / Tailwind CSS / shadcn/ui / OpenAI SDK
+Next.js 16 (App Router) / TypeScript / Tailwind CSS / shadcn/ui / OpenAI SDK / Supabase Auth
 
 ## ドキュメント
 
@@ -76,22 +80,21 @@ Vercel へデプロイする前に、以下を確認してください。
 
 ### ビルド・環境変数
 
-- [ ] `npm run build` が成功すること
+- [ ] `npm test` / `npm run lint` / `npm run build` が成功すること
 - [ ] `.env.local` に `OPENAI_API_KEY` が設定されていること
-- [ ] Vercel の Environment Variables に `OPENAI_API_KEY` を設定すること
+- [ ] Vercel の Environment Variables に `OPENAI_API_KEY` と Supabase 公開キーを設定すること
 - [ ] （任意）`NEXT_PUBLIC_GA_MEASUREMENT_ID` をローカル / Vercel に設定し、GA4 リアルタイムでアクセスが記録されること
 
 ### 主要機能
 
 - [ ] `/` で日本語実況を入力し、変換できること
-- [ ] `/favorites` でお気に入り一覧が表示されること
-- [ ] `/history` で履歴一覧が表示されること
+- [ ] `/favorites` / `/history` / `/vocabulary` / `/discover` / `/quiz` / `/daily` が動作すること
 - [ ] `/history` の履歴をクリックし、`/?restore=<historyId>` 経由で Home に過去の変換結果が復元されること
 - [ ] OpenAI API が失敗したとき、エラーメッセージが画面に表示されること
 
 ### レイアウト・UI
 
-- [ ] 375px / 430px / 768px / 1024px の各幅でレイアウト崩れがないこと
-- [ ] モバイル Header のハンバーガーメニューが開閉できること
-- [ ] ハンバーガーメニュー内のリンクを押すとページ遷移し、メニューが閉じること
-- [ ] Footer が全ページ（`/` / `/favorites` / `/history`）で自然に表示されること
+- [ ] 320px / 390px / 768px / 1024px の各幅でレイアウト崩れがないこと
+- [ ] モバイル Bottom Navigation と Footer が重ならないこと
+- [ ] Quiz / Daily（Focus Session）では Footer / Bottom Navigation が非表示であること
+- [ ] Footer が主要ページで自然に表示されること

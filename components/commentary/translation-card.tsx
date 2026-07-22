@@ -12,7 +12,13 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 
 import { SpeechPlaybackButton } from "@/components/commentary/speech-playback-button";
@@ -24,6 +30,11 @@ import {
   toggleFavorite,
   useFavoriteTranslations,
 } from "@/hooks/use-favorite-translations";
+import {
+  microLabelClassName,
+  surfaceCardClassName,
+  surfaceCardEmphasisClassName,
+} from "@/lib/design/surfaces";
 import { cn } from "@/lib/utils";
 import type { CommentaryTranslationItem } from "@/types/commentary";
 
@@ -40,6 +51,14 @@ type TranslationCardProps = {
   favoriteSurface?: boolean;
   /** Home result: tighten spacing on mobile only (Desktop + Favorites untouched). */
   denseOnMobile?: boolean;
+  /**
+   * Home conversion results: candidate 01/02/03, original JP, collapsible
+   * explanation, Vocabulary as primary learning CTA, no card hover lift.
+   * Favorites leave this unset.
+   */
+  homeResults?: boolean;
+  /** Optional footer rendered below Practice (e.g. Discover publish on Favorites). */
+  footer?: ReactNode;
   /** Whether the favorite (star) action is shown. Hidden on the Vocabulary page. */
   showFavoriteAction?: boolean;
   /** Home result: show the "add to vocabulary" action. */
@@ -50,16 +69,111 @@ type TranslationCardProps = {
   onAddVocabulary?: () => void;
   /** Vocabulary page: remove this item from the vocabulary book. */
   onRemoveVocabulary?: () => void;
+  /**
+   * Favorites: when set and currently favorited, called instead of immediate
+   * unfavorite (e.g. confirm that Discover publish continues).
+   */
+  onRequestUnfavorite?: () => void;
 };
 
 const CANDIDATE_MARKERS = ["①", "②", "③"] as const;
 
 const actionButtonClassName =
-  "size-11 min-h-11 min-w-11 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-950/50";
+  "size-11 min-h-11 min-w-11 rounded-full hover:bg-muted";
+
+const favoriteActionButtonClassName =
+  "size-9 min-h-9 min-w-9 rounded-full hover:bg-muted";
 
 function getYouTubeSearchUrl(commentaryText: string): string {
   const query = `"${commentaryText}" Premier League commentary`;
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
+
+function formatCandidateIndex(index: number): string {
+  return String(index + 1).padStart(2, "0");
+}
+
+function CollapsibleExplanation({
+  explanation,
+  compact,
+  denseOnMobile,
+  lineClampClass = "line-clamp-3 sm:line-clamp-4",
+}: {
+  explanation: string;
+  compact: boolean;
+  denseOnMobile: boolean;
+  lineClampClass?: string;
+}) {
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) {
+      return;
+    }
+
+    if (expanded) {
+      return;
+    }
+
+    // line-clamp can make scrollHeight === clientHeight in some engines;
+    // fall back to a length heuristic so long Favorites/Home copy stays expandable.
+    const overflows = el.scrollHeight > el.clientHeight + 1;
+    const threshold = lineClampClass.includes("line-clamp-2") ? 64 : 96;
+    const likelyLong = explanation.trim().length > threshold;
+    setCanExpand(overflows || likelyLong);
+  }, [explanation, expanded, lineClampClass]);
+
+  return (
+    <div
+      className={cn(
+        "min-w-0 px-0.5",
+        compact ? "space-y-0.5" : "space-y-1",
+        denseOnMobile && "max-sm:space-y-0.5"
+      )}
+    >
+      <p
+        className={cn(
+          "inline-flex items-center gap-1 font-medium text-muted-foreground",
+          compact ? "text-[11px] leading-none" : "text-sm"
+        )}
+      >
+        <MessageCircle
+          className={cn(
+            "shrink-0 text-muted-foreground",
+            compact ? "size-3" : "size-3.5"
+          )}
+          aria-hidden="true"
+        />
+        解説
+      </p>
+      <p
+        ref={textRef}
+        className={cn(
+          "break-words text-muted-foreground",
+          compact ? "text-xs leading-5" : "text-sm leading-7",
+          !expanded && lineClampClass
+        )}
+      >
+        {explanation}
+      </p>
+      {canExpand || expanded ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          className={cn(
+            "rounded-md px-1 text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            compact ? "min-h-8 py-0.5" : "min-h-9"
+          )}
+        >
+          {expanded ? "閉じる" : "続きを読む"}
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 export function TranslationCard({
@@ -71,11 +185,14 @@ export function TranslationCard({
   showOriginal = false,
   favoriteSurface = false,
   denseOnMobile = false,
+  homeResults = false,
+  footer,
   showFavoriteAction = true,
   showVocabularyAction = false,
   isVocabularySaved = false,
   onAddVocabulary,
   onRemoveVocabulary,
+  onRequestUnfavorite,
 }: TranslationCardProps) {
   const { user } = useAuth();
   const favorites = useFavoriteTranslations();
@@ -86,6 +203,7 @@ export function TranslationCard({
   const hasLearningPoint = Boolean(translation.learningPoint.text);
   const [copied, setCopied] = useState(false);
   const copyResetTimeoutRef = useRef<number | null>(null);
+  const vocabularyInHeader = showVocabularyAction && !homeResults;
 
   useEffect(() => {
     return () => {
@@ -97,6 +215,11 @@ export function TranslationCard({
 
   function handleToggleFavorite() {
     if (!japaneseText) {
+      return;
+    }
+
+    if (isFavorite && onRequestUnfavorite) {
+      onRequestUnfavorite();
       return;
     }
 
@@ -131,7 +254,7 @@ export function TranslationCard({
         }
       }
 
-      toast.success("Copied!");
+      toast.success("コピーしました");
       setCopied(true);
 
       if (copyResetTimeoutRef.current !== null) {
@@ -141,55 +264,129 @@ export function TranslationCard({
       copyResetTimeoutRef.current = window.setTimeout(() => {
         setCopied(false);
         copyResetTimeoutRef.current = null;
-      }, 1000);
+      }, 1500);
     } catch {
       toast.error("コピーに失敗しました");
     }
   }
 
-  return (
-    <HoverLift className="h-full min-w-0 max-w-full">
-      <Card
+  const card = (
+    <Card
+      className={cn(
+        "relative flex min-w-0 max-w-full flex-col overflow-hidden",
+        homeResults || favoriteSurface
+          ? surfaceCardClassName
+          : surfaceCardEmphasisClassName,
+        favoriteSurface || homeResults ? "h-auto" : "h-full"
+      )}
+    >
+      <CardContent
         className={cn(
-          "relative flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-3xl bg-white/95 dark:bg-emerald-950/35",
+          "flex min-w-0 max-w-full flex-col",
+          homeResults || favoriteSurface ? "flex-none" : "flex-1",
           favoriteSurface
-            ? "border border-emerald-200/70 shadow-xs transition-[box-shadow,border-color] duration-200 ease-out hover:border-emerald-300/80 hover:shadow-md hover:shadow-emerald-200/40 dark:border-emerald-800/50 dark:shadow-emerald-950/30 dark:hover:border-emerald-700/70 dark:hover:shadow-emerald-900/40"
-            : "border border-emerald-100/80 shadow-sm shadow-emerald-100/50 transition-shadow hover:shadow-xl hover:shadow-emerald-200/50 dark:border-emerald-900/50 dark:shadow-emerald-950/40 dark:hover:shadow-emerald-900/50"
+            ? "space-y-2 p-2.5 max-sm:space-y-1.5 sm:p-3"
+            : compact
+              ? "space-y-3 p-3.5 sm:p-4"
+              : "space-y-6 p-5 sm:p-7",
+          denseOnMobile && !favoriteSurface && "max-sm:space-y-2.5 max-sm:p-3"
         )}
       >
-        <CardContent
-          className={cn(
-            "flex min-w-0 max-w-full flex-1 flex-col",
-            compact ? "space-y-3 p-3.5 sm:p-4" : "space-y-6 p-5 sm:p-7",
-            denseOnMobile && "max-sm:space-y-2 max-sm:p-3"
-          )}
-        >
+        {favoriteSurface ? (
+          <div className="relative min-w-0 pr-[6.75rem]">
+            <h3 className="min-w-0 text-base font-semibold leading-snug tracking-tight text-balance break-words text-foreground sm:text-lg">
+              {translation.text}
+            </h3>
+            <div className="absolute top-0 right-0 flex shrink-0 items-center gap-0.5">
+              {japaneseText && showFavoriteAction ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggleFavorite}
+                  aria-label={
+                    isFavorite ? "お気に入りから削除" : "お気に入りに追加"
+                  }
+                  aria-pressed={isFavorite}
+                  className={cn(
+                    favoriteActionButtonClassName,
+                    "text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40",
+                    isFavorite && "bg-amber-50/90 dark:bg-amber-950/30"
+                  )}
+                >
+                  <Star
+                    className={cn(
+                      "size-4 transition-colors",
+                      isFavorite
+                        ? "fill-amber-200 text-amber-600 dark:fill-amber-700/80 dark:text-amber-300"
+                        : "text-amber-500"
+                    )}
+                  />
+                </Button>
+              ) : null}
+              <SpeechPlaybackButton
+                text={translation.text}
+                variant="icon"
+                className="size-9 min-h-9 min-w-9 [&_svg]:size-4"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => void handleCopy()}
+                aria-label={copied ? "コピーしました" : "英語をコピー"}
+                className={cn(
+                  favoriteActionButtonClassName,
+                  "text-foreground/65 hover:text-foreground"
+                )}
+              >
+                {copied ? (
+                  <Check className="size-4 text-primary" aria-hidden="true" />
+                ) : (
+                  <Clipboard className="size-4" aria-hidden="true" />
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
           <div className="flex min-w-0 items-center justify-between gap-2">
             {showIndex ? (
-              <span
-                className={cn(
-                  "inline-flex shrink-0 items-center justify-center rounded-full border border-border bg-muted/60 font-semibold text-muted-foreground",
-                  compact ? "size-7 text-xs" : "size-8 text-sm",
-                  denseOnMobile && "max-sm:size-6 max-sm:text-[11px]"
-                )}
-                aria-label={`Candidate ${index + 1}`}
-              >
-                {CANDIDATE_MARKERS[index] ?? String(index + 1)}
-              </span>
+              homeResults ? (
+                <span
+                  className="inline-flex shrink-0 items-center rounded-md border border-border/80 bg-muted/50 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-muted-foreground tabular-nums"
+                  aria-label={`候補 ${index + 1}`}
+                >
+                  {formatCandidateIndex(index)}
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center justify-center rounded-full border border-border bg-muted/60 font-semibold text-muted-foreground",
+                    compact ? "size-7 text-xs" : "size-8 text-sm",
+                    denseOnMobile && "max-sm:size-6 max-sm:text-[11px]"
+                  )}
+                  aria-label={`候補 ${index + 1}`}
+                >
+                  {CANDIDATE_MARKERS[index] ?? String(index + 1)}
+                </span>
+              )
             ) : (
-              <span className="sr-only">Translation</span>
+              <span className="sr-only">翻訳候補</span>
             )}
 
-            <div className="ml-auto flex shrink-0 items-center gap-1">
+            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
               {japaneseText && showFavoriteAction ? (
-                <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }}>
+                <motion.div
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.9 }}
+                >
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-lg"
                     onClick={handleToggleFavorite}
                     aria-label={
-                      isFavorite ? "お気に入りを解除" : "お気に入りに追加"
+                      isFavorite ? "お気に入りから削除" : "お気に入りに追加"
                     }
                     aria-pressed={isFavorite}
                     className={cn(
@@ -207,7 +404,7 @@ export function TranslationCard({
                 </motion.div>
               ) : null}
 
-              {showVocabularyAction ? (
+              {vocabularyInHeader ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -215,13 +412,14 @@ export function TranslationCard({
                   onClick={onAddVocabulary}
                   disabled={isVocabularySaved}
                   aria-label={
-                    isVocabularySaved ? "単語帳に追加済み" : "単語帳に追加"
+                    isVocabularySaved ? "追加済み ✓" : "単語帳に追加"
                   }
+                  aria-pressed={isVocabularySaved}
                   className={cn(
                     actionButtonClassName,
                     isVocabularySaved
-                      ? "text-emerald-600 disabled:opacity-100 dark:text-emerald-400"
-                      : "text-foreground/70 hover:text-emerald-800 dark:text-emerald-200 dark:hover:text-emerald-100"
+                      ? "text-primary disabled:cursor-default disabled:opacity-100"
+                      : "text-foreground/70 hover:text-primary"
                   )}
                 >
                   {isVocabularySaved ? (
@@ -242,11 +440,11 @@ export function TranslationCard({
                 aria-label={copied ? "コピーしました" : "英語をコピー"}
                 className={cn(
                   actionButtonClassName,
-                  "text-foreground/70 hover:text-emerald-800 dark:text-emerald-200 dark:hover:text-emerald-100"
+                  "text-foreground/70 hover:text-foreground"
                 )}
               >
                 {copied ? (
-                  <Check className="size-5 text-emerald-600" aria-hidden="true" />
+                  <Check className="size-5 text-primary" aria-hidden="true" />
                 ) : (
                   <Clipboard className="size-5" aria-hidden="true" />
                 )}
@@ -261,7 +459,7 @@ export function TranslationCard({
                   aria-label="単語帳から削除"
                   className={cn(
                     actionButtonClassName,
-                    "text-foreground/60 hover:bg-red-50 hover:text-red-600 dark:text-emerald-200/70 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                    "text-foreground/60 hover:bg-destructive/10 hover:text-destructive"
                   )}
                 >
                   <Trash2 className="size-5" aria-hidden="true" />
@@ -269,96 +467,175 @@ export function TranslationCard({
               ) : null}
             </div>
           </div>
+        )}
 
-          {showOriginal && japaneseText ? (
-            <div className="min-w-0 border-l-2 border-emerald-200/70 pl-2.5 dark:border-emerald-800/60">
-              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
-                元の日本語
-              </p>
-              <p className="break-words text-sm leading-snug text-muted-foreground">
-                {japaneseText}
-              </p>
-            </div>
-          ) : null}
-
-          <div className="min-w-0 max-w-full">
+        {!favoriteSurface ? (
+          <div className="min-w-0 max-w-full space-y-1.5">
             <p
               className={cn(
                 "font-semibold tracking-tight text-balance break-words text-foreground",
                 compact
                   ? "text-lg leading-snug sm:text-xl"
-                  : "text-2xl leading-snug sm:text-3xl sm:leading-tight"
+                  : "text-2xl leading-snug sm:text-3xl sm:leading-tight",
+                homeResults && "text-[1.125rem] leading-snug sm:text-xl"
               )}
             >
               {translation.text}
             </p>
+            {homeResults && japaneseText ? (
+              <div className="min-w-0">
+                <p className={microLabelClassName}>元の日本語</p>
+                <p className="break-words text-sm leading-snug text-muted-foreground">
+                  {japaneseText}
+                </p>
+              </div>
+            ) : null}
           </div>
+        ) : (showOriginal || favoriteSurface) && japaneseText ? (
+          <div className="min-w-0 space-y-0">
+            {favoriteSurface ? (
+              <p className="break-words text-xs leading-snug text-muted-foreground">
+                <span className="font-medium text-muted-foreground/80">
+                  元の日本語
+                </span>
+                <span aria-hidden="true"> · </span>
+                {japaneseText}
+              </p>
+            ) : (
+              <>
+                <p className={microLabelClassName}>元の日本語</p>
+                <p className="break-words text-sm leading-snug text-muted-foreground">
+                  {japaneseText}
+                </p>
+              </>
+            )}
+          </div>
+        ) : null}
 
-          {translation.meaning ? (
-            <div
+        {translation.meaning ? (
+          <div
+            className={cn(
+              "min-w-0 rounded-xl border",
+              favoriteSurface
+                ? "space-y-0 rounded-lg border-slate-200/80 bg-slate-50 px-2 py-1 dark:border-border/60 dark:bg-muted/30"
+                : "space-y-0.5 border-border/70 bg-muted/40",
+              !favoriteSurface &&
+                (compact ? "px-2.5 py-1.5" : "space-y-1 px-4 py-3"),
+              denseOnMobile &&
+                !favoriteSurface &&
+                "max-sm:rounded-lg max-sm:px-2.5 max-sm:py-1"
+            )}
+          >
+            <p
               className={cn(
-                "min-w-0 space-y-0.5 rounded-2xl border border-border/60 bg-gray-50/80 dark:border-border/40 dark:bg-muted/30",
-                compact ? "px-3 py-1.5" : "space-y-1 px-4 py-3",
-                denseOnMobile && "max-sm:rounded-xl max-sm:px-2.5 max-sm:py-1"
+                microLabelClassName,
+                favoriteSurface && "text-[10px] leading-none text-slate-500 dark:text-muted-foreground"
               )}
             >
-              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
-                Meaning
-              </p>
+              Meaning
+            </p>
+            <p
+              className={cn(
+                "break-words text-foreground",
+                favoriteSurface
+                  ? "text-xs leading-snug text-slate-700 dark:text-foreground"
+                  : compact
+                    ? "text-sm leading-relaxed"
+                    : "text-base leading-relaxed"
+              )}
+            >
+              {translation.meaning}
+            </p>
+          </div>
+        ) : null}
+
+        {hasLearningPoint ? (
+          <div
+            className={cn(
+              "min-w-0 rounded-xl border",
+              homeResults
+                ? "border-border/80 bg-background"
+                : favoriteSurface
+                  ? "space-y-0.5 rounded-lg border-primary/20 bg-primary/[0.04] p-2"
+                  : "rounded-2xl border-primary/20 bg-primary/[0.06] dark:border-primary/30 dark:bg-primary/10",
+              !favoriteSurface &&
+                (compact ? "space-y-1 p-2.5" : "space-y-2.5 p-4"),
+              denseOnMobile &&
+                !favoriteSurface &&
+                "max-sm:space-y-1 max-sm:rounded-lg max-sm:p-2"
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase sm:px-2.5",
+                  homeResults
+                    ? "border-border/80 bg-muted/50 text-muted-foreground"
+                    : "border-primary/25 bg-primary/[0.08] text-primary",
+                  favoriteSurface && "gap-1 px-1.5 py-px"
+                )}
+              >
+                <Lightbulb
+                  className={cn(
+                    "size-3",
+                    homeResults && "text-primary",
+                    favoriteSurface && "size-2.5"
+                  )}
+                  aria-hidden="true"
+                />
+                Learning Point
+              </span>
+            </div>
+            <div
+              className={cn(
+                "min-w-0",
+                favoriteSurface
+                  ? translation.learningPoint.meaning
+                    ? "space-y-0.5"
+                    : "space-y-0"
+                  : "space-y-1",
+                denseOnMobile && !favoriteSurface && "max-sm:space-y-0.5"
+              )}
+            >
               <p
                 className={cn(
-                  "leading-relaxed break-words text-foreground",
-                  compact ? "text-sm" : "text-base"
+                  "font-semibold tracking-wide break-words text-foreground",
+                  favoriteSurface
+                    ? "text-sm leading-snug"
+                    : compact
+                      ? "text-sm"
+                      : "text-lg sm:text-xl"
                 )}
               >
-                {translation.meaning}
+                {translation.learningPoint.text}
               </p>
-            </div>
-          ) : null}
-
-          {hasLearningPoint ? (
-            <div
-              className={cn(
-                "min-w-0 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 dark:border-emerald-800/45 dark:bg-emerald-950/25",
-                compact ? "space-y-1.5 p-2.5" : "space-y-2.5 p-4",
-                denseOnMobile && "max-sm:space-y-1 max-sm:rounded-xl max-sm:p-2"
-              )}
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white uppercase dark:bg-emerald-500/90 dark:text-emerald-950 sm:px-2.5">
-                  <Lightbulb className="size-3" aria-hidden="true" />
-                  Learning Point
-                </span>
-              </div>
-              <div
-                className={cn(
-                  "min-w-0 space-y-1",
-                  denseOnMobile && "max-sm:space-y-0.5"
-                )}
-              >
+              {translation.learningPoint.meaning ? (
                 <p
                   className={cn(
-                    "font-semibold tracking-wide break-words text-emerald-950 dark:text-emerald-50",
-                    compact ? "text-sm sm:text-base" : "text-lg sm:text-xl"
+                    "leading-snug break-words text-muted-foreground",
+                    favoriteSurface || compact ? "text-xs" : "text-sm leading-relaxed"
                   )}
                 >
-                  {translation.learningPoint.text}
+                  {translation.learningPoint.meaning}
                 </p>
-                {translation.learningPoint.meaning ? (
-                  <p
-                    className={cn(
-                      "leading-relaxed break-words text-emerald-900/80 dark:text-emerald-200/80",
-                      compact ? "text-xs" : "text-sm"
-                    )}
-                  >
-                    {translation.learningPoint.meaning}
-                  </p>
-                ) : null}
-              </div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {translation.explanation ? (
+        {translation.explanation ? (
+          homeResults || favoriteSurface ? (
+            <CollapsibleExplanation
+              explanation={translation.explanation}
+              compact={compact || favoriteSurface}
+              denseOnMobile={denseOnMobile || favoriteSurface}
+              lineClampClass={
+                favoriteSurface
+                  ? "line-clamp-2"
+                  : "line-clamp-3 sm:line-clamp-4"
+              }
+            />
+          ) : (
             <div
               className={cn(
                 "min-w-0 space-y-1 px-0.5",
@@ -375,7 +652,7 @@ export function TranslationCard({
                   className="size-4 shrink-0 text-muted-foreground"
                   aria-hidden="true"
                 />
-                Explanation
+                解説
               </p>
               <p
                 className={cn(
@@ -388,23 +665,57 @@ export function TranslationCard({
                 {translation.explanation}
               </p>
             </div>
+          )
+        ) : null}
+
+        <div
+          className={cn(
+            "min-w-0 space-y-2",
+            !favoriteSurface && !homeResults && "mt-auto",
+            compact || favoriteSurface ? "pt-0.5" : "pt-0",
+            denseOnMobile && "max-sm:space-y-1.5 max-sm:pt-0"
+          )}
+        >
+          {homeResults && showVocabularyAction ? (
+            <Button
+              type="button"
+              variant={isVocabularySaved ? "outline" : "default"}
+              disabled={isVocabularySaved}
+              onClick={onAddVocabulary}
+              aria-label={
+                isVocabularySaved ? "追加済み ✓" : "単語帳に追加"
+              }
+              aria-pressed={isVocabularySaved}
+              className={cn(
+                "h-11 w-full max-w-full gap-1.5 rounded-xl text-sm font-semibold",
+                isVocabularySaved &&
+                  "border-emerald-200/80 bg-emerald-50/70 text-emerald-800 disabled:cursor-default disabled:opacity-100 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200"
+              )}
+            >
+              {isVocabularySaved ? (
+                <BookmarkCheck className="size-4" aria-hidden="true" />
+              ) : (
+                <BookMarked className="size-4" aria-hidden="true" />
+              )}
+              <span className="truncate">
+                {isVocabularySaved ? "追加済み ✓" : "単語帳に追加"}
+              </span>
+            </Button>
           ) : null}
 
-          <div
-            className={cn(
-              "mt-auto min-w-0",
-              compact ? "space-y-1.5 pt-1" : "space-y-2",
-              denseOnMobile && "max-sm:space-y-1 max-sm:pt-0"
+          <div className={cn("min-w-0", !favoriteSurface && (compact ? "space-y-1.5" : "space-y-2"))}>
+            {favoriteSurface ? null : (
+              <p className={microLabelClassName}>練習</p>
             )}
-          >
-            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
-              Practice
-            </p>
             <Button
               variant="outline"
               className={cn(
-                "w-full max-w-full rounded-xl border-border bg-white transition-colors duration-200 ease-out hover:border-emerald-300/70 hover:bg-emerald-50/40 dark:bg-background dark:hover:border-emerald-700/60 dark:hover:bg-emerald-950/30",
-                compact ? "h-9 gap-1.5 px-2 text-xs sm:text-sm" : "h-11"
+                "w-full max-w-full rounded-xl",
+                favoriteSurface
+                  ? "h-9 min-h-9 gap-1.5 border-border/70 px-2 text-xs font-medium text-foreground/90 hover:bg-muted/60"
+                  : compact
+                    ? "h-10 gap-1.5 px-2 text-xs sm:text-sm"
+                    : "h-11"
               )}
               nativeButton={false}
               render={
@@ -418,14 +729,40 @@ export function TranslationCard({
               }
             >
               <Play
-                className="size-3.5 shrink-0 fill-red-600 text-red-600 sm:size-4"
+                className={cn(
+                  "size-3.5 shrink-0 sm:size-4",
+                  favoriteSurface
+                    ? "fill-foreground/55 text-foreground/70"
+                    : "fill-red-600 text-red-600"
+                )}
                 aria-hidden="true"
               />
               <span className="truncate">この表現を練習</span>
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </HoverLift>
+        </div>
+
+        {footer ? (
+          <div
+            className={cn(
+              "min-w-0 border-t",
+              favoriteSurface
+                ? "border-border/40 pt-1.5"
+                : "border-border/50 pt-2.5"
+            )}
+          >
+            {footer}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+
+  if (homeResults || favoriteSurface) {
+    return <div className="min-w-0 max-w-full">{card}</div>;
+  }
+
+  return (
+    <HoverLift className="min-w-0 max-w-full h-full">{card}</HoverLift>
   );
 }

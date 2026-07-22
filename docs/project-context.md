@@ -2,7 +2,7 @@
 
 Version: 1.0
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-22
 
 ---
 
@@ -134,23 +134,47 @@ Storage
 
 - OAuth callback
 
+## Discover MVP
+
+- 公開フィード（トレンド / 新着 / 人気）
+
+- Heard / 単語帳追加
+
+- カテゴリ・検索
+
+## Design System v1
+
+- surfaces / category / vocabulary-status トークン
+
+## Vocabulary / Quiz / Daily
+
+- 単語帳（Progress・今日の復習）
+
+- Practice Quiz（最大5問・途中離脱確認）
+
+- 今日のChallenge（1問）
+
+## Home 例文
+
+- おすすめ例文カタログ約150件
+
+## Focus Session
+
+- `/quiz` `/daily` では Footer / Bottom Navigation 非表示
+
+## 品質
+
+- `npm test` / `npm run lint` / `npm run build` がクリーンであること
+
 ---
 
 # 現在のフェーズ
 
-Phase2
+Discover MVP + Design System v1 のリリース候補。
 
-Repository層へ移行予定。
+Repository 経由で localStorage / Supabase を切り替え。
 
-まだ
-
-localStorage
-
-を利用している。
-
-Google認証のみ完了。
-
-Supabase Databaseへの保存はまだ開始していない。
+ログイン時は Favorites / History / Vocabulary / Daily / Discover を Supabase 同期。
 
 ---
 

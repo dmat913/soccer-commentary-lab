@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/vocabulary/learning.test.ts lib/vocabulary/display.test.ts lib/vocabulary/sort-preference.test.ts lib/daily/vocabulary-learning.test.ts lib/quiz/vocabulary-learning.test.ts",
+    "test": "tsx --test lib/vocabulary/learning.test.ts lib/vocabulary/display.test.ts lib/vocabulary/sort-preference.test.ts lib/daily/vocabulary-learning.test.ts lib/quiz/vocabulary-learning.test.ts lib/quiz/leave-guard.test.ts lib/examples/random.test.ts lib/favorites/supabase-mapping.test.ts lib/discover/supabase-mapping.test.ts lib/discover/sorting.test.ts lib/discover/heard-state.test.ts lib/discover/vocabulary-mapping.test.ts lib/discover/ownership.test.ts lib/discover/category.test.ts lib/auth/safe-redirect.test.ts lib/design/vocabulary-status.test.ts lib/layout/focus-session.test.ts",
     "test:openai": "tsx --env-file=.env.local scripts/test-openai.ts"
   },
   "dependencies": {

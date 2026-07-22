@@ -1,9 +1,43 @@
-import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  AUTH_RETURN_COOKIE_NAME,
+  buildAuthCallbackRedirectUrl,
+  clearAuthReturnPathCookieHeader,
+  resolveAuthReturnPath,
+} from "@/lib/auth/safe-redirect";
 import { getSupabaseEnv } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
 
-export async function GET(request: Request) {
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: Parameters<NextResponse["cookies"]["set"]>[2];
+};
+
+function applyCookies(response: NextResponse, cookiesToSet: CookieToSet[]) {
+  cookiesToSet.forEach(({ name, value, options }) => {
+    response.cookies.set(name, value, options);
+  });
+}
+
+function redirectWithinOrigin(
+  request: NextRequest,
+  next: string,
+  cookiesToSet: CookieToSet[] = []
+) {
+  const response = NextResponse.redirect(
+    buildAuthCallbackRedirectUrl(request.nextUrl, next)
+  );
+  applyCookies(response, cookiesToSet);
+
+  const clearReturn = clearAuthReturnPathCookieHeader();
+  response.cookies.set(clearReturn.name, clearReturn.value, clearReturn.options);
+
+  return response;
+}
+
+export async function GET(request: NextRequest) {
   const env = getSupabaseEnv();
 
   if (!env) {
@@ -16,18 +50,34 @@ export async function GET(request: Request) {
     );
   }
 
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const code = request.nextUrl.searchParams.get("code");
+  const next = resolveAuthReturnPath({
+    cookieValue: request.cookies.get(AUTH_RETURN_COOKIE_NAME)?.value,
+    queryValue: request.nextUrl.searchParams.get("next"),
+  });
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+  if (!code) {
+    return redirectWithinOrigin(request, "/?auth_error=sign_in_failed");
   }
 
-  return NextResponse.redirect(`${origin}/?auth_error=sign_in_failed`);
+  const pendingCookies: CookieToSet[] = [];
+
+  const supabase = createServerClient(env.url, env.anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        pendingCookies.splice(0, pendingCookies.length, ...cookiesToSet);
+      },
+    },
+  });
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    return redirectWithinOrigin(request, "/?auth_error=sign_in_failed");
+  }
+
+  return redirectWithinOrigin(request, next, pendingCookies);
 }

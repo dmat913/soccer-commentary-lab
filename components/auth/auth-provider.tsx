@@ -34,7 +34,6 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
 
   useEffect(() => {
     if (!isConfigured) {
-      setIsLoading(false);
       return;
     }
 
@@ -46,8 +45,6 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
-
-    setIsLoading(false);
 
     return () => {
       subscription.unsubscribe();

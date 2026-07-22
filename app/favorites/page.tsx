@@ -4,39 +4,72 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 
 import { FavoriteTranslations } from "@/components/commentary/favorite-translations";
+import { TranslationCardSkeleton } from "@/components/commentary/translation-card-skeleton";
 import { Button } from "@/components/ui/button";
-import { FadeIn } from "@/components/ui/motion";
-import { useFavoriteTranslations } from "@/hooks/use-favorite-translations";
+import { FadeIn } from "@/components/ui/fade-in";
+import {
+  useFavoriteTranslations,
+  useFavoriteTranslationsLoading,
+} from "@/hooks/use-favorite-translations";
+import {
+  emptyStateIconClassName,
+  pageHeaderClassName,
+  pageMainClassName,
+  pageShellClassName,
+  pageSubtitleClassName,
+  pageTitleClassName,
+} from "@/lib/design/surfaces";
+
+function FavoritesListSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="grid min-w-0 grid-cols-1 items-start gap-2.5 sm:gap-3 lg:grid-cols-2"
+    >
+      <span className="sr-only">お気に入りを読み込み中</span>
+      {[0, 1].map((index) => (
+        <div key={index} aria-hidden="true" className="min-w-0">
+          <TranslationCardSkeleton index={index} compact />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function FavoritesPage() {
   const favorites = useFavoriteTranslations();
+  const isLoading = useFavoriteTranslationsLoading();
   const hasFavorites = favorites.length > 0;
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-emerald-50/70 via-background to-background dark:from-emerald-950/30">
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+    <div className={pageShellClassName}>
+      <main className={`${pageMainClassName} gap-4 sm:gap-6`}>
         <FadeIn>
-          <header className="space-y-1.5">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-              お気に入り
-            </h1>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              保存した英語実況をいつでも復習できます
+          <header className={pageHeaderClassName}>
+            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+              <h1 className={pageTitleClassName}>お気に入り</h1>
+              {hasFavorites ? (
+                <p className="text-caption text-muted-foreground">
+                  {favorites.length}件の表現
+                </p>
+              ) : null}
+            </div>
+            <p className={pageSubtitleClassName}>
+              気に入った実況表現を保存して、いつでも聞き直せます
             </p>
-            {hasFavorites ? (
-              <p className="text-xs text-muted-foreground/70">
-                保存済み {favorites.length}件　·　最新の保存が先頭
-              </p>
-            ) : null}
           </header>
         </FadeIn>
 
         {hasFavorites ? (
           <FavoriteTranslations />
+        ) : isLoading ? (
+          <FavoritesListSkeleton />
         ) : (
           <FadeIn>
-            <div className="flex flex-col items-center gap-3 py-12 text-center sm:py-16">
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+            <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
+              <div className={emptyStateIconClassName}>
                 <Star className="size-5" aria-hidden="true" />
               </div>
               <div className="space-y-1">
@@ -44,17 +77,16 @@ export default function FavoritesPage() {
                   お気に入りはまだありません
                 </h2>
                 <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  気になる英語実況の星アイコンを押すと、ここでいつでも復習できます
+                  気に入った実況表現の星を押すと、ここに保存されます
                 </p>
               </div>
               <Button
-                variant="outline"
                 size="lg"
                 nativeButton={false}
                 render={<Link href="/" />}
                 className="mt-1 rounded-full px-5"
               >
-                Homeで英語実況を作る
+                実況を作る
               </Button>
             </div>
           </FadeIn>

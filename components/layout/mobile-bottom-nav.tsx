@@ -11,8 +11,8 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      aria-label="Mobile navigation"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-200/50 bg-background md:hidden dark:border-emerald-900/50"
+      aria-label="モバイルナビゲーション"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="mx-auto flex max-w-md items-stretch">
@@ -21,19 +21,20 @@ export function MobileBottomNav() {
           const Icon = item.icon;
 
           return (
-            <li key={item.href} className="flex-1">
+            <li key={item.href} className="min-w-0 flex-1">
               <Link
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500/50",
+                  "flex min-h-12 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 text-[10px] leading-none font-medium transition-colors duration-200 ease-out sm:min-h-[3.25rem] sm:text-[11px]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
                   isActive
-                    ? "text-emerald-700 dark:text-emerald-300"
-                    : "text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-300"
+                    ? "bg-primary/[0.08] text-primary"
+                    : "text-muted-foreground"
                 )}
               >
-                <Icon className="size-5" aria-hidden="true" />
-                {item.label}
+                <Icon className="size-4 shrink-0 sm:size-5" aria-hidden="true" />
+                <span className="max-w-full truncate">{item.label}</span>
               </Link>
             </li>
           );
