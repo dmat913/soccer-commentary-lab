@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { FadeIn } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/fade-in";
 import { getCanonicalUrl, SITE_NAME } from "@/lib/seo/site";
 
 const PAGE_TITLE = "利用規約";

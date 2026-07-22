@@ -3,58 +3,8 @@
 import { motion, type HTMLMotionProps } from "framer-motion";
 import type { ReactNode } from "react";
 
+/** Linear-like soft ease — Design System v1 motion. */
 const easeOut = [0.25, 0.1, 0.25, 1] as const;
-
-type FadeInProps = {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-  duration?: number;
-  y?: number;
-};
-
-export function FadeIn({
-  children,
-  className,
-  delay = 0,
-  duration = 0.45,
-  y = 14,
-}: FadeInProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration, delay, ease: easeOut }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-type SlideUpFadeInProps = {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-};
-
-/** Softer entrance for result cards after conversion. */
-export function SlideUpFadeIn({
-  children,
-  className,
-  delay = 0,
-}: SlideUpFadeInProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, delay, ease: easeOut }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 type FloatProps = {
   children: ReactNode;
@@ -65,9 +15,9 @@ export function Float({ children, className }: FloatProps) {
   return (
     <motion.div
       className={className}
-      animate={{ y: [0, -5, 0] }}
+      animate={{ y: [0, -4, 0] }}
       transition={{
-        duration: 4.5,
+        duration: 5,
         repeat: Infinity,
         ease: "easeInOut",
       }}
@@ -81,32 +31,13 @@ type HoverLiftProps = HTMLMotionProps<"div"> & {
   children: ReactNode;
 };
 
+/** Card hover lift — keep Framer for interactive translation cards. */
 export function HoverLift({ children, className, ...props }: HoverLiftProps) {
   return (
     <motion.div
-      whileHover={{ y: -2, transition: { duration: 0.2, ease: easeOut } }}
+      whileHover={{ y: -2, transition: { duration: 0.18, ease: easeOut } }}
       className={className}
       {...props}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-type MotionButtonWrapperProps = {
-  children: ReactNode;
-  className?: string;
-};
-
-export function MotionButtonWrapper({
-  children,
-  className,
-}: MotionButtonWrapperProps) {
-  return (
-    <motion.div
-      whileHover={{ y: -2, transition: { duration: 0.2, ease: easeOut } }}
-      whileTap={{ scale: 0.98 }}
-      className={className}
     >
       {children}
     </motion.div>

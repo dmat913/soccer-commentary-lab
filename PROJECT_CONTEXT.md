@@ -10,7 +10,7 @@
 - ブランド名: `KickLingo`
 - コードネーム / ディレクトリ: `soccer-commentary`
 - 配置: `~/Projects/soccer-commentary`
-- 現状: MVP 完成。**Home / Favorites / History の3画面構成**。データは localStorage 中心。
+- 現状: Discover MVP + Design System v1 リリース候補。Home / Favorites / History / Vocabulary / Discover / Quiz / Daily。データは localStorage + ログイン時 Supabase。
 
 ## コンセプト
 
@@ -33,13 +33,17 @@
 | 状態・永続化 | React state + localStorage |
 | 音声入力 | Web Speech API — `SpeechRecognition`（`ja-JP`） |
 | 音声読み上げ | Web Speech API — `SpeechSynthesis`（`en-US`） |
-| 未導入 | Supabase, Prisma, 認証, デプロイ |
+| 未導入 | Prisma、Stripe 課金 |
 
 ### 環境変数
 
 ```bash
 # .env.local
 OPENAI_API_KEY=sk-...
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# 任意
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-...
 ```
 
 読み上げ機能はクライアント側のみで動作するため、**追加の API キーは不要**。
@@ -49,19 +53,25 @@ OPENAI_API_KEY=sk-...
 ```bash
 npm run dev          # 開発サーバー
 npm run build        # 本番ビルド
+npm run start        # 本番サーバー
+npm test             # ユニットテスト
+npm run lint         # ESLint
 npm run test:openai  # OpenAI 接続テスト
 ```
 
 ## 画面構成
 
-全ページで `SiteHeader`（`components/layout/site-header.tsx`）が共通表示される。  
-`app/layout.tsx` から `SiteHeader` を読み込み、ナビで Home / Favorites / History を切り替える。
+全ページで `SiteHeader` が共通表示される。Quiz / Daily（Focus Session）では Footer と Mobile Bottom Navigation を非表示にする。
 
-| ルート | 役割 | 表示内容 |
-|--------|------|---------|
-| `/` | AIで実況を変換する | Hero、入力フォーム、変換結果（`TranslationCard` × 3） |
-| `/favorites` | 学習用の表現帳 | お気に入り一覧（`FavoriteTranslations`） |
-| `/history` | 過去の変換履歴 | 履歴一覧（`CommentaryHistory`） |
+| ルート | 役割 |
+|--------|------|
+| `/` | 実況変換（Hero・フォーム・結果）。おすすめ例文は約150件カタログから抽出 |
+| `/favorites` | お気に入り一覧・Discover 公開 |
+| `/history` | 履歴一覧・検索・restore |
+| `/vocabulary` | 単語帳・Progress・今日の復習 |
+| `/discover` | 公開フィード・Heard・検索・カテゴリ |
+| `/quiz` | Practice Quiz（最大5問）。途中離脱確認あり |
+| `/daily` | 今日のChallenge（1問） |
 
 ### 履歴 → Home 復元（restore 連携）
 

@@ -7,6 +7,9 @@ import {
   formatVocabularyReviewRecency,
   getVocabularyReviewRecommendations,
   vocabularyFilterEmptyCopy,
+  vocabularyMasteryPercent,
+  vocabularyMasteryRemainingCount,
+  vocabularyMasteryRemainingLabel,
   vocabularyStatusLabel,
   vocabularyStreakProgressLabel,
   summarizeVocabularyLearning,
@@ -87,12 +90,12 @@ describe("vocabularyFilterEmptyCopy", () => {
   it("distinguishes search, status, and combined empties", () => {
     assert.equal(
       vocabularyFilterEmptyCopy({ hasQuery: true, statusFilter: "all" }).title,
-      "検索結果がありません"
+      "条件に一致する表現がありません"
     );
     assert.equal(
       vocabularyFilterEmptyCopy({ hasQuery: false, statusFilter: "mastered" })
         .title,
-      "このステータスの表現はまだありません"
+      "条件に一致する表現がありません"
     );
     assert.equal(
       vocabularyFilterEmptyCopy({ hasQuery: true, statusFilter: "learning" })
@@ -121,6 +124,31 @@ describe("formatVocabularyReviewedAt / streak label", () => {
     assert.equal(vocabularyStreakProgressLabel(2), "2 / 3");
     assert.equal(vocabularyStreakProgressLabel(3), "3 / 3");
     assert.equal(vocabularyStreakProgressLabel(5), "5 / 3");
+  });
+});
+
+describe("vocabularyMasteryPercent / remaining", () => {
+  it("computes mastery percent from mastered / total", () => {
+    assert.equal(
+      vocabularyMasteryPercent({ total: 0, masteredCount: 0 }),
+      0
+    );
+    assert.equal(
+      vocabularyMasteryPercent({ total: 10, masteredCount: 7 }),
+      70
+    );
+    assert.equal(
+      vocabularyMasteryPercent({ total: 3, masteredCount: 3 }),
+      100
+    );
+  });
+
+  it("describes remaining corrects until mastery", () => {
+    assert.equal(vocabularyMasteryRemainingCount(0), 3);
+    assert.equal(vocabularyMasteryRemainingCount(2), 1);
+    assert.equal(vocabularyMasteryRemainingCount(3), 0);
+    assert.equal(vocabularyMasteryRemainingLabel(2), "あと1回正解で習得");
+    assert.equal(vocabularyMasteryRemainingLabel(3), "習得済み");
   });
 });
 

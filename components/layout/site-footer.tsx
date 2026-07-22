@@ -7,14 +7,14 @@ export function SiteFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-emerald-950/20">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3.5 px-4 py-6 sm:px-6">
+    <footer className="mt-auto border-t border-border/70 bg-primary/[0.03]">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-5 sm:gap-3.5 sm:px-6 sm:py-6">
         <div className="space-y-1">
           <p className="flex items-center gap-1.5 text-base font-bold tracking-tight">
             <KickLingoMark className="size-6 shrink-0" />
             <span>
               <span className="text-[#0F172A] dark:text-white">Kick</span>
-              <span className="text-emerald-600 dark:text-emerald-400">Lingo</span>
+              <span className="text-primary">Lingo</span>
             </span>
           </p>
           <p className="text-sm text-muted-foreground">
@@ -25,13 +25,13 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <nav aria-label="Footer navigation">
+        <nav aria-label="フッターナビゲーション">
           <ul className="flex flex-wrap gap-x-4 gap-y-2">
             {siteNavItems.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-sm text-muted-foreground transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+                  className="text-sm text-muted-foreground transition-colors duration-200 ease-out hover:text-primary"
                 >
                   {item.label}
                 </Link>
@@ -45,7 +45,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/privacy"
-                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-primary"
               >
                 プライバシーポリシー
               </Link>
@@ -53,7 +53,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/terms"
-                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-primary"
               >
                 利用規約
               </Link>
@@ -61,7 +61,7 @@ export function SiteFooter() {
             <li>
               <Link
                 href="/contact"
-                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-emerald-700 dark:hover:text-emerald-300"
+                className="text-xs text-muted-foreground/80 transition-colors duration-200 ease-out hover:text-primary"
               >
                 お問い合わせ
               </Link>

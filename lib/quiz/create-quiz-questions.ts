@@ -2,7 +2,7 @@ import type { QuizOption, QuizQuestion } from "@/types/quiz";
 import type { VocabularyItem } from "@/types/vocabulary";
 
 export const QUIZ_MIN_ITEMS = 4;
-export const QUIZ_MAX_QUESTIONS = 10;
+export const QUIZ_MAX_QUESTIONS = 5;
 export const QUIZ_OPTION_COUNT = 4;
 
 /** In-place-free Fisher–Yates shuffle returning a new array. */

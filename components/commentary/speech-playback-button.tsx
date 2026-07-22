@@ -118,14 +118,17 @@ export function SpeechPlaybackButton({
         aria-label={isSpeaking ? "読み上げを停止" : "英語実況を再生"}
         aria-pressed={isSpeaking}
         className={cn(
-          "size-11 min-h-11 min-w-11 rounded-full text-foreground/70 hover:bg-emerald-50 hover:text-emerald-800 dark:text-emerald-200 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-100",
+          "size-11 min-h-11 min-w-11 rounded-full text-foreground/70 hover:bg-muted hover:text-foreground",
           isSpeaking &&
-            "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400",
+            "bg-primary/[0.12] text-primary hover:bg-primary/[0.16] hover:text-primary",
           className
         )}
       >
         {isSpeaking ? (
-          <Square className="size-5" aria-hidden="true" />
+          <Square
+            className="size-5 animate-pulse motion-reduce:animate-none"
+            aria-hidden="true"
+          />
         ) : (
           <Volume2 className="size-5" aria-hidden="true" />
         )}
@@ -142,14 +145,18 @@ export function SpeechPlaybackButton({
       aria-label={isSpeaking ? "読み上げを停止" : "英語実況を再生"}
       aria-pressed={isSpeaking}
       className={cn(
-        "rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50",
-        isSpeaking && "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white",
+        "rounded-full border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+        isSpeaking &&
+          "border-primary/40 bg-primary/[0.12] text-primary hover:bg-primary/[0.16] hover:text-primary",
         className
       )}
     >
       {isSpeaking ? (
         <>
-          <Square className="size-3.5" aria-hidden="true" />
+          <Square
+            className="size-3.5 animate-pulse motion-reduce:animate-none"
+            aria-hidden="true"
+          />
           停止
         </>
       ) : (

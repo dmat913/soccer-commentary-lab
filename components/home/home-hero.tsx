@@ -1,8 +1,7 @@
-"use client";
+import { Check, Goal, Sparkles } from "lucide-react";
 
-import { Check, Sparkles, Wand2 } from "lucide-react";
-
-import { FadeIn, Float } from "@/components/ui/motion";
+import { Badge } from "@/components/ui/badge";
+import { FadeIn } from "@/components/ui/fade-in";
 
 const infoBadges = [
   "無料で利用できます",
@@ -11,43 +10,47 @@ const infoBadges = [
 
 export function HomeHero() {
   return (
-    <FadeIn duration={0.7} y={18}>
-      <header className="relative space-y-3.5 py-1 text-center sm:space-y-5 sm:py-3 sm:text-left">
+    <FadeIn duration={0.45} y={10}>
+      <header className="relative space-y-2 text-center sm:space-y-3.5 sm:text-left">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-10 left-1/2 h-56 w-[min(100%,36rem)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.22),transparent_70%)] blur-2xl dark:bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.14),transparent_70%)] sm:left-0 sm:translate-x-0"
+          className="pointer-events-none absolute -top-6 left-1/2 h-40 w-[min(100%,28rem)] -translate-x-1/2 rounded-full bg-primary/[0.08] blur-3xl sm:left-0 sm:translate-x-0"
         />
 
-        <div className="relative flex flex-wrap items-center justify-center gap-1.5 sm:justify-start sm:gap-2">
-          <Float>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50/95 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700 shadow-md shadow-emerald-200/40 sm:gap-2 sm:px-4 sm:py-1.5 dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 dark:shadow-emerald-950/40">
-              <Wand2 className="size-3.5" aria-hidden="true" />
-              AI Powered
-            </div>
-          </Float>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-white/80 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700 shadow-sm backdrop-blur-sm sm:gap-2 sm:px-4 sm:py-1.5 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-              <Sparkles className="size-3.5" aria-hidden="true" />
-              KickLingo
-            </div>
+        <div className="relative flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+          <Badge
+            variant="outline"
+            className="gap-1.5 rounded-full border-border/80 bg-background/90 px-2 py-0.5 text-[11px] text-foreground shadow-xs backdrop-blur-sm sm:px-3 sm:py-1 sm:text-xs"
+          >
+            <Goal className="size-3.5 text-primary" aria-hidden="true" />
+            サッカー実況特化
+          </Badge>
+          <Badge
+            variant="outline"
+            className="gap-1.5 rounded-full border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[11px] text-primary shadow-xs backdrop-blur-sm sm:px-3 sm:py-1 sm:text-xs"
+          >
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            AI英語変換
+          </Badge>
         </div>
 
-        <div className="relative space-y-2 sm:space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground max-sm:text-3xl max-sm:leading-[1.12] sm:text-5xl lg:text-6xl lg:leading-[1.08]">
+        <div className="relative space-y-1 sm:space-y-2.5">
+          <h1 className="text-[1.625rem] font-bold tracking-tight text-foreground max-sm:leading-[1.15] sm:text-4xl lg:text-5xl lg:leading-[1.1]">
             サッカー実況を
             <br className="sm:hidden" />
             英語で学ぶ
           </h1>
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground max-sm:text-sm max-sm:leading-6 sm:mx-0 sm:text-lg sm:leading-8">
-            日本語のサッカー実況を入力して、「変換」ボタンを押すと英語の実況フレーズに変換されます。
+          <p className="mx-auto max-w-lg text-[13px] leading-relaxed text-muted-foreground sm:mx-0 sm:text-base sm:leading-7">
+            日本語の実況を、自然な英語実況へ変換します。
           </p>
         </div>
 
-        <ul className="relative flex flex-wrap items-center justify-center gap-1.5 sm:justify-start sm:gap-2">
+        <ul className="relative flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
           {infoBadges.map((label) => (
-            <li key={label}>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 bg-white/80 px-2.5 py-1 text-xs font-medium text-emerald-800 shadow-sm backdrop-blur-sm sm:gap-1.5 sm:px-3 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <li key={label} className="min-w-0 max-w-full">
+              <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/80 px-2 py-0.5 text-[10px] font-medium break-words text-muted-foreground backdrop-blur-sm sm:px-3 sm:text-xs">
                 <Check
-                  className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400"
+                  className="size-3 shrink-0 text-primary"
                   aria-hidden="true"
                 />
                 {label}

@@ -1,5 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  getFavoriteRemoteEnrichmentPatch,
+  mapFavoriteRowToTranslation,
+  mapFavoriteTranslationToInsertRow,
+  type FavoriteEnrichmentPatch,
+  type FavoriteRow,
+} from "@/lib/favorites/supabase-mapping";
 import { createClient } from "@/lib/supabase/client";
 import { logSupabaseRepositoryError } from "@/lib/repositories/supabase-error";
 import type {
@@ -8,56 +15,10 @@ import type {
 } from "@/lib/repositories/types";
 import type { FavoriteTranslation } from "@/types/favorite";
 
-type FavoriteRow = {
-  id: string;
-  user_id: string;
-  japanese_text: string;
-  english_text: string;
-  style: string | null;
-  learning_point: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 const EMPTY_FAVORITES: FavoriteTranslation[] = [];
 
-function mapRowToFavorite(row: FavoriteRow): FavoriteTranslation {
-  const learningPointText = row.learning_point?.trim() ?? "";
-
-  return {
-    id: row.id,
-    japaneseText: row.japanese_text,
-    text: row.english_text,
-    meaning: "",
-    ...(learningPointText
-      ? {
-          learningPoint: {
-            text: learningPointText,
-            meaning: "",
-          },
-        }
-      : {}),
-    createdAt: row.created_at,
-  };
-}
-
-function mapFavoriteToRow(
-  favorite: FavoriteTranslation,
-  userId: string
-): Omit<FavoriteRow, "updated_at"> & { updated_at: string } {
-  const timestamp = favorite.createdAt;
-
-  return {
-    id: favorite.id,
-    user_id: userId,
-    japanese_text: favorite.japaneseText,
-    english_text: favorite.text,
-    style: null,
-    learning_point: favorite.learningPoint?.text.trim() || null,
-    created_at: timestamp,
-    updated_at: timestamp,
-  };
-}
+const FAVORITE_SELECT_COLUMNS =
+  "id, user_id, japanese_text, english_text, style, meaning, explanation, learning_point, learning_point_meaning, created_at, updated_at";
 
 export class SupabaseFavoritesRepository implements FavoritesRepository {
   private snapshot: FavoriteTranslation[] = EMPTY_FAVORITES;
@@ -119,9 +80,7 @@ export class SupabaseFavoritesRepository implements FavoritesRepository {
   async fetchAll(): Promise<FavoriteTranslation[]> {
     const { data, error } = await this.supabase
       .from("favorites")
-      .select(
-        "id, user_id, japanese_text, english_text, style, learning_point, created_at, updated_at"
-      )
+      .select(FAVORITE_SELECT_COLUMNS)
       .eq("user_id", this.userId)
       .order("created_at", { ascending: false });
 
@@ -139,7 +98,7 @@ export class SupabaseFavoritesRepository implements FavoritesRepository {
     }
 
     const favorites = (data ?? []).map((row) =>
-      mapRowToFavorite(row as FavoriteRow)
+      mapFavoriteRowToTranslation(row as FavoriteRow)
     );
     this.snapshot = favorites.length > 0 ? favorites : EMPTY_FAVORITES;
     this.notifyListeners();
@@ -157,7 +116,7 @@ export class SupabaseFavoritesRepository implements FavoritesRepository {
    * Used by initial localStorage → Supabase sync; call fetchAll() afterwards.
    */
   async insertFavorite(favorite: FavoriteTranslation): Promise<void> {
-    const row = mapFavoriteToRow(favorite, this.userId);
+    const row = mapFavoriteTranslationToInsertRow(favorite, this.userId);
     const { error } = await this.supabase.from("favorites").insert(row);
 
     if (error) {
@@ -173,6 +132,54 @@ export class SupabaseFavoritesRepository implements FavoritesRepository {
       );
       throw error;
     }
+  }
+
+  /**
+   * Fills empty remote content fields only. Used by local → Supabase sync.
+   * Does not touch the in-memory snapshot; caller should fetchAll() afterwards.
+   */
+  async updateFavoriteFields(
+    favoriteId: string,
+    patch: FavoriteEnrichmentPatch
+  ): Promise<void> {
+    const { error } = await this.supabase
+      .from("favorites")
+      .update({
+        ...patch,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", this.userId)
+      .eq("id", favoriteId);
+
+    if (error) {
+      logSupabaseRepositoryError(
+        "[SupabaseFavoritesRepository] updateFavoriteFields failed",
+        error,
+        {
+          userId: this.userId,
+          tableName: "favorites",
+          operation: "update",
+          favoriteId,
+        }
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Applies enrichment from a local favorite onto a matching remote favorite
+   * when remote fields are empty. Returns true when an update was sent.
+   */
+  async enrichFavoriteFromLocal(
+    remote: FavoriteTranslation,
+    local: FavoriteTranslation
+  ): Promise<boolean> {
+    const patch = getFavoriteRemoteEnrichmentPatch(remote, local);
+    if (!patch) {
+      return false;
+    }
+    await this.updateFavoriteFields(remote.id, patch);
+    return true;
   }
 
   private async addFavorite(favorite: FavoriteTranslation): Promise<void> {

@@ -3,10 +3,12 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { AppGoogleAnalytics } from "@/components/analytics/app-google-analytics";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { AppChrome } from "@/components/layout/app-chrome";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { QuizLeaveGuardProvider } from "@/components/quiz/quiz-leave-guard-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { Toaster } from "@/components/ui/sonner";
+import { LazyToaster } from "@/components/ui/lazy-toaster";
 import { getUser } from "@/lib/auth/get-user";
 import { metadata as siteMetadata } from "@/lib/seo/metadata";
 
@@ -36,13 +38,25 @@ export default async function RootLayout({
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <body className="flex min-h-full flex-col">
         <AuthProvider initialUser={initialUser}>
-          <SiteHeader />
-          <div className="flex-1">{children}</div>
-          <SiteFooter />
-          <MobileBottomNav />
-          <Toaster position="bottom-center" richColors closeButton />
+          <QuizLeaveGuardProvider>
+            <SiteHeader />
+            <AppChrome footer={<SiteFooter />} bottomNav={<MobileBottomNav />}>
+              {children}
+            </AppChrome>
+            <LazyToaster
+              position="bottom-center"
+              richColors
+              closeButton
+              offset={{
+                bottom: "calc(3.75rem + env(safe-area-inset-bottom))",
+              }}
+              mobileOffset={{
+                bottom: "calc(3.75rem + env(safe-area-inset-bottom))",
+              }}
+            />
+          </QuizLeaveGuardProvider>
         </AuthProvider>
         <AppGoogleAnalytics />
       </body>

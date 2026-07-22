@@ -4,7 +4,6 @@ import { AuthSkeleton } from "@/components/auth/auth-skeleton";
 import { LoginButton } from "@/components/auth/login-button";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { cn } from "@/lib/utils";
 
 type AuthControlsProps = {
   className?: string;

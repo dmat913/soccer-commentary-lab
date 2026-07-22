@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 
 import { CommentaryHistory } from "@/components/commentary/commentary-history";
+import { HistoryListSkeleton } from "@/components/commentary/history-list-skeleton";
 import {
   FrequentExpressions,
   HistoryStats,
@@ -13,13 +14,26 @@ import {
   type FrequentExpression,
 } from "@/components/history/history-sidebar";
 import { Button } from "@/components/ui/button";
-import { FadeIn } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/fade-in";
 import { useAuth } from "@/hooks/use-auth";
 import {
   removeHistory,
   useCommentaryHistory,
+  useCommentaryHistoryLoading,
 } from "@/hooks/use-commentary-history";
 import { useFavoriteTranslations } from "@/hooks/use-favorite-translations";
+import {
+  emptyStateIconClassName,
+  pageHeaderClassName,
+  pageMainWideClassName,
+  pageShellClassName,
+  pageSubtitleClassName,
+  pageTitleClassName,
+  pillActiveClassName,
+  pillBaseClassName,
+  pillIdleClassName,
+  searchInputClassName,
+} from "@/lib/design/surfaces";
 import { cn } from "@/lib/utils";
 import type { CommentaryHistoryItem } from "@/types/history";
 
@@ -102,6 +116,7 @@ export default function HistoryPage() {
   const router = useRouter();
   const { user } = useAuth();
   const history = useCommentaryHistory();
+  const isHistoryLoading = useCommentaryHistoryLoading();
   const favorites = useFavoriteTranslations();
   const searchInputId = useId();
 
@@ -167,63 +182,73 @@ export default function HistoryPage() {
     setQuery("");
   }
 
+  const clearAllButton = hasHistory ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={handleClearAll}
+      aria-label="履歴をすべて削除"
+      className="h-8 shrink-0 gap-1.5 self-start rounded-full px-2.5 text-[11px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive"
+    >
+      <Trash2 className="size-3.5" aria-hidden="true" />
+      履歴をすべて削除
+    </Button>
+  ) : null;
+
   const header = (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="space-y-1.5">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-          履歴
-        </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          これまでに作成した英語実況の履歴です
+    <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <div className={cn(pageHeaderClassName, "space-y-1")}>
+        <h1 className={pageTitleClassName}>履歴</h1>
+        <p className={cn(pageSubtitleClassName, "text-[13px] sm:text-sm")}>
+          これまでに変換した英語実況を振り返れます
         </p>
         {hasHistory ? (
-          <p className="text-xs text-muted-foreground/70">
-            履歴 {history.length}件　·　最新の変換が先頭
+          <p className="text-[11px] text-muted-foreground tabular-nums">
+            {history.length}件の履歴
           </p>
         ) : null}
       </div>
-
-      {hasHistory ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleClearAll}
-          className="h-9 shrink-0 gap-1.5 self-start rounded-full px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-          履歴をすべて削除
-        </Button>
-      ) : null}
+      <div className="hidden sm:block">{clearAllButton}</div>
     </header>
   );
 
   if (!hasHistory) {
+    if (isHistoryLoading) {
+      return (
+        <div className={pageShellClassName}>
+          <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4 overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8 md:py-10">
+            <FadeIn>{header}</FadeIn>
+            <HistoryListSkeleton />
+          </main>
+        </div>
+      );
+    }
+
     return (
-      <div className="min-h-full bg-gradient-to-b from-emerald-50/70 via-background to-background dark:from-emerald-950/30">
-        <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-6 overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+      <div className={pageShellClassName}>
+        <main className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4 overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8 md:py-10">
           <FadeIn>{header}</FadeIn>
           <FadeIn>
-            <div className="flex flex-col items-center gap-3 py-12 text-center sm:py-16">
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+            <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
+              <div className={emptyStateIconClassName}>
                 <History className="size-5" aria-hidden="true" />
               </div>
               <div className="space-y-1">
                 <h2 className="text-base font-semibold text-foreground">
-                  変換履歴はまだありません
+                  履歴はまだありません
                 </h2>
                 <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  Homeで英語実況を作成すると、ここから過去の結果を確認できます
+                  変換した実況が、ここに保存されます
                 </p>
               </div>
               <Button
-                variant="outline"
                 size="lg"
                 nativeButton={false}
                 render={<Link href="/" />}
                 className="mt-1 rounded-full px-5"
               >
-                Homeで英語実況を作る
+                実況を作る
               </Button>
             </div>
           </FadeIn>
@@ -233,18 +258,44 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-emerald-50/70 via-background to-background dark:from-emerald-950/30">
-      <main className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
-          {/* Left column */}
-          <div className="flex min-w-0 flex-col gap-5">
+    <div className={pageShellClassName}>
+      <main
+        className={cn(
+          pageMainWideClassName,
+          "min-w-0 gap-4 sm:gap-5"
+        )}
+      >
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-6">
+          <div className="flex min-w-0 flex-col gap-2.5 sm:gap-3">
             <FadeIn>{header}</FadeIn>
 
-            <FadeIn className="flex flex-col gap-3">
+            <FadeIn className="flex flex-col gap-2">
+              <div className="relative max-w-xl">
+                <label htmlFor={searchInputId} className="sr-only">
+                  履歴を検索
+                </label>
+                <Search
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70"
+                  aria-hidden="true"
+                />
+                <input
+                  id={searchInputId}
+                  type="search"
+                  inputMode="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="日本語や英語で検索…"
+                  className={cn(
+                    searchInputClassName,
+                    "h-9 rounded-xl border-border/70 bg-background pl-9 shadow-none"
+                  )}
+                />
+              </div>
+
               <div
                 role="group"
                 aria-label="期間で絞り込み"
-                className="flex flex-wrap gap-2"
+                className="flex w-full max-w-xl gap-0.5 rounded-full border border-border/70 bg-background p-0.5"
               >
                 {PERIOD_OPTIONS.map((option) => {
                   const active = period === option.id;
@@ -255,10 +306,10 @@ export default function HistoryPage() {
                       aria-pressed={active}
                       onClick={() => setPeriod(option.id)}
                       className={cn(
-                        "rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-1",
-                        active
-                          ? "border-emerald-500 bg-emerald-600 text-white shadow-xs dark:border-emerald-500 dark:bg-emerald-600"
-                          : "border-border/70 bg-background text-muted-foreground hover:border-emerald-300 hover:text-emerald-800 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+                        pillBaseClassName,
+                        "min-h-8 flex-1 rounded-full border-transparent px-2 py-1.5 text-[11px] sm:flex-none sm:px-3 sm:text-xs",
+                        active ? pillActiveClassName : pillIdleClassName,
+                        !active && "border-transparent bg-transparent"
                       )}
                     >
                       {option.label}
@@ -267,24 +318,7 @@ export default function HistoryPage() {
                 })}
               </div>
 
-              <div className="relative">
-                <label htmlFor={searchInputId} className="sr-only">
-                  履歴を検索
-                </label>
-                <Search
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70"
-                  aria-hidden="true"
-                />
-                <input
-                  id={searchInputId}
-                  type="text"
-                  inputMode="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="日本語や英語で検索..."
-                  className="h-10 w-full rounded-full border border-border/70 bg-background pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 dark:bg-input/30"
-                />
-              </div>
+              <div className="sm:hidden">{clearAllButton}</div>
             </FadeIn>
 
             {filteredHistory.length > 0 ? (
@@ -295,16 +329,16 @@ export default function HistoryPage() {
               />
             ) : (
               <FadeIn>
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card/60 py-10 text-center">
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-muted/70 text-muted-foreground dark:bg-muted/40">
-                    <Search className="size-4" aria-hidden="true" />
-                  </div>
+                <div
+                  role="status"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-5 text-center"
+                >
                   <div className="space-y-1">
-                    <h2 className="text-base font-semibold text-foreground">
-                      一致する履歴がありません
+                    <h2 className="text-sm font-semibold text-foreground">
+                      条件に一致する履歴がありません
                     </h2>
-                    <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
-                      検索条件や期間を変更してみてください
+                    <p className="mx-auto max-w-sm text-xs leading-relaxed text-muted-foreground">
+                      検索キーワードや期間を変えてみてください
                     </p>
                   </div>
                   {isFiltering ? (
@@ -313,7 +347,7 @@ export default function HistoryPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleResetFilters}
-                      className="mt-1 h-9 rounded-full px-4"
+                      className="mt-0.5 h-8 rounded-full px-3 text-xs"
                     >
                       フィルターを解除
                     </Button>
@@ -322,20 +356,21 @@ export default function HistoryPage() {
               </FadeIn>
             )}
 
-            {/* Mobile-only learning record (right-column elements move below list) */}
-            <HistoryStats
-              conversions={stats.conversions}
-              expressions={stats.expressions}
-              favorites={stats.favorites}
-              studyDays={stats.studyDays}
-              className="lg:hidden"
-            />
+            <div className="flex flex-col gap-2.5 lg:hidden">
+              <HistoryStats
+                conversions={stats.conversions}
+                expressions={stats.expressions}
+                favorites={stats.favorites}
+                studyDays={stats.studyDays}
+              />
+              <FrequentExpressions expressions={frequentExpressions} />
+              <LearningTip />
+            </div>
           </div>
 
-          {/* Right column (Desktop only) */}
           <aside
             aria-label="学習の記録"
-            className="hidden min-w-0 flex-col gap-4 lg:flex"
+            className="hidden min-w-0 flex-col gap-2.5 lg:flex"
           >
             <HistoryStats
               conversions={stats.conversions}

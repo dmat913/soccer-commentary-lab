@@ -406,6 +406,39 @@ export function vocabularyStreakProgressLabel(
   return `${safeStreak} / ${VOCABULARY_MASTERY_STREAK}`;
 }
 
+/** Mastery rate 0–100 from mastered / total. */
+export function vocabularyMasteryPercent(
+  summary: Pick<VocabularyLearningSummary, "total" | "masteredCount">
+): number {
+  if (summary.total <= 0) {
+    return 0;
+  }
+  return Math.round((summary.masteredCount / summary.total) * 100);
+}
+
+/** How many more correct answers are needed to reach mastery. */
+export function vocabularyMasteryRemainingCount(
+  correctStreak: number
+): number {
+  const safeStreak =
+    typeof correctStreak === "number" &&
+    Number.isFinite(correctStreak) &&
+    correctStreak > 0
+      ? Math.floor(correctStreak)
+      : 0;
+  return Math.max(0, VOCABULARY_MASTERY_STREAK - safeStreak);
+}
+
+export function vocabularyMasteryRemainingLabel(
+  correctStreak: number
+): string {
+  const remaining = vocabularyMasteryRemainingCount(correctStreak);
+  if (remaining <= 0) {
+    return "習得済み";
+  }
+  return `あと${remaining}回正解で習得`;
+}
+
 export type VocabularyLearningSummary = {
   total: number;
   newCount: number;
@@ -452,26 +485,26 @@ export function vocabularyFilterEmptyCopy(options: {
   if (hasQuery && statusFilter !== "all") {
     return {
       title: "条件に一致する表現がありません",
-      description: `「${vocabularyStatusFilterLabel(statusFilter)}」と検索キーワードの両方に合う表現がありません。条件を変えてみてください。`,
+      description: "検索キーワードかステータスを変えてみてください。",
     };
   }
 
   if (hasQuery) {
     return {
-      title: "検索結果がありません",
-      description: "検索キーワードを変えてみてください",
+      title: "条件に一致する表現がありません",
+      description: "検索キーワードを変えてみてください。",
     };
   }
 
   if (statusFilter !== "all") {
     return {
-      title: "このステータスの表現はまだありません",
-      description: `「${vocabularyStatusFilterLabel(statusFilter)}」の表現はまだありません。QuizやDaily Challengeで学習を進めると表示されます。`,
+      title: "条件に一致する表現がありません",
+      description: `「${vocabularyStatusFilterLabel(statusFilter)}」の表現はまだありません。`,
     };
   }
 
   return {
-    title: "単語帳は空です",
-    description: "Homeで英語実況を作って追加しましょう",
+    title: "単語帳はまだ空です",
+    description: "気になる表現を追加して学習できます。",
   };
 }

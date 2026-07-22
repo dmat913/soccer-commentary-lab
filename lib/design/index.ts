@@ -1,0 +1,31 @@
+export { categoryBadgeClassName } from "@/lib/design/category";
+export {
+  bodyTextClassName,
+  captionTextClassName,
+  cardTitleClassName,
+  emptyStateIconClassName,
+  focusRingClassName,
+  homeShellClassName,
+  microLabelClassName,
+  mobileBottomNavClearanceClassName,
+  pageHeaderClassName,
+  pageMainClassName,
+  pageMainWideClassName,
+  pageShellClassName,
+  pageSubtitleClassName,
+  pageTitleClassName,
+  pillActiveClassName,
+  pillBaseClassName,
+  pillIdleClassName,
+  searchInputClassName,
+  sectionTitleClassName,
+  surfaceCardClassName,
+  surfaceCardEmphasisClassName,
+  surfaceCardInteractiveClassName,
+  surfacePanelClassName,
+  twoColumnLayoutClassName,
+} from "@/lib/design/surfaces";
+export {
+  vocabularyStatusBadgeClassName,
+  vocabularyStatusDotClassName,
+} from "@/lib/design/vocabulary-status";

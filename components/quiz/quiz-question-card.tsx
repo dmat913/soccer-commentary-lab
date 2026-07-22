@@ -60,27 +60,33 @@ export function QuizQuestionCard({
   }, [answered]);
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="min-w-0 space-y-3">
       <section
         ref={promptRef}
         tabIndex={-1}
         aria-label="問題"
-        className="min-w-0 space-y-1.5 rounded-3xl border border-emerald-100/80 bg-white/95 p-4 shadow-sm shadow-emerald-100/40 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 sm:p-6 dark:border-emerald-900/50 dark:bg-emerald-950/35"
+        className="min-w-0 space-y-1 rounded-xl border border-border/70 bg-card px-3.5 py-3 shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-4 sm:py-3.5"
       >
-        <p className="text-[11px] font-semibold tracking-wider text-emerald-700/80 uppercase dark:text-emerald-300/80">
+        <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
           この実況英語は？
         </p>
-        <p className="text-xl leading-snug font-semibold tracking-tight text-balance break-words text-foreground sm:text-2xl">
+        <p className="text-lg font-semibold leading-snug tracking-tight text-balance break-words text-foreground sm:text-xl">
           {question.meaning}
         </p>
         {showJapanese ? (
-          <p className="break-words text-sm leading-relaxed text-muted-foreground">
-            元の日本語：{question.japaneseText}
+          <p className="break-words text-xs leading-snug text-muted-foreground sm:text-sm">
+            元の日本語 · {question.japaneseText}
           </p>
         ) : null}
       </section>
 
-      <ul className="min-w-0 space-y-2.5" aria-label="選択肢">
+      {!answered ? (
+        <p className="px-0.5 text-[11px] text-muted-foreground">
+          タップで回答 · キーボード 1〜4
+        </p>
+      ) : null}
+
+      <ul className="min-w-0 space-y-2" aria-label="選択肢">
         {question.options.map((option, index) => {
           const isSelected = option.id === selectedOptionId;
           const showCorrect = answered && option.isCorrect;
@@ -104,38 +110,38 @@ export function QuizQuestionCard({
                   stateLabel ? `（${stateLabel}）` : ""
                 }`}
                 className={cn(
-                  "flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition-colors duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-1 disabled:cursor-default",
+                  "flex min-h-12 w-full min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:cursor-default sm:min-h-11 motion-reduce:transition-none",
                   !answered &&
-                    "border-border bg-background hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30",
+                    "border-border/80 bg-background hover:border-primary/35 hover:bg-primary/[0.04]",
                   showCorrect &&
-                    "border-emerald-400 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-950/50",
+                    "border-emerald-300/90 bg-emerald-50/80 dark:border-emerald-700/70 dark:bg-emerald-950/40",
                   showWrong &&
-                    "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40",
-                  isDimmed && "border-border/60 bg-muted/20"
+                    "border-rose-300/80 bg-rose-50/70 dark:border-rose-800/60 dark:bg-rose-950/30",
+                  isDimmed && "border-border/50 bg-muted/15 opacity-70"
                 )}
               >
                 <span
                   className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums",
+                    "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold tabular-nums",
                     showCorrect
                       ? "border-emerald-500 bg-emerald-500 text-white dark:text-emerald-950"
                       : showWrong
-                        ? "border-red-400 bg-red-400 text-white"
-                        : "border-border bg-muted/60 text-muted-foreground"
+                        ? "border-rose-400 bg-rose-400 text-white"
+                        : "border-border/80 bg-muted/50 text-muted-foreground"
                   )}
                   aria-hidden="true"
                 >
                   {showCorrect ? (
-                    <Check className="size-4" />
+                    <Check className="size-3.5" />
                   ) : showWrong ? (
-                    <X className="size-4" />
+                    <X className="size-3.5" />
                   ) : (
                     OPTION_MARKERS[index]
                   )}
                 </span>
                 <span
                   className={cn(
-                    "min-w-0 flex-1 break-words text-sm font-medium sm:text-base",
+                    "min-w-0 flex-1 break-words text-sm font-medium leading-snug sm:text-[15px]",
                     isDimmed ? "text-muted-foreground" : "text-foreground"
                   )}
                 >
@@ -150,41 +156,41 @@ export function QuizQuestionCard({
       {answered ? (
         <div
           className={cn(
-            "min-w-0 space-y-3 rounded-2xl border p-4",
+            "min-w-0 space-y-2.5 rounded-xl border p-3 sm:p-3.5",
             selectedIsCorrect
-              ? "border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-800/50 dark:bg-emerald-950/25"
-              : "border-red-200/70 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/20"
+              ? "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-800/50 dark:bg-emerald-950/25"
+              : "border-rose-200/70 bg-rose-50/50 dark:border-rose-900/50 dark:bg-rose-950/20"
           )}
         >
           <div className="flex items-center gap-2">
             <span
               className={cn(
                 "flex size-6 shrink-0 items-center justify-center rounded-full text-white",
-                selectedIsCorrect ? "bg-emerald-500" : "bg-red-400"
+                selectedIsCorrect ? "bg-emerald-500" : "bg-rose-400"
               )}
               aria-hidden="true"
             >
               {selectedIsCorrect ? (
-                <Check className="size-4" />
+                <Check className="size-3.5" />
               ) : (
-                <X className="size-4" />
+                <X className="size-3.5" />
               )}
             </span>
             <p
               role="status"
               aria-live="polite"
               className={cn(
-                "text-base font-semibold",
+                "text-sm font-semibold sm:text-base",
                 selectedIsCorrect
                   ? "text-emerald-800 dark:text-emerald-200"
-                  : "text-red-700 dark:text-red-300"
+                  : "text-rose-700 dark:text-rose-300"
               )}
             >
               {selectedIsCorrect ? "正解！" : "惜しい！"}
             </p>
             {selectedIsCorrect && streak >= 2 ? (
               <span
-                className="ml-auto inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 tabular-nums dark:bg-emerald-900/60 dark:text-emerald-200"
+                className="ml-auto inline-flex items-center rounded-full bg-primary/[0.1] px-2 py-0.5 text-[11px] font-medium text-primary tabular-nums"
                 aria-hidden="true"
               >
                 {streak}連続正解
@@ -192,47 +198,47 @@ export function QuizQuestionCard({
             ) : null}
           </div>
 
-          <div className="min-w-0 space-y-1">
-            <p className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
-              正解の英語実況
+          <div className="min-w-0 space-y-0.5">
+            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              {selectedIsCorrect ? "正解の英語実況" : "正解はこちら"}
             </p>
             <div className="flex min-w-0 items-start gap-2">
-              <p className="min-w-0 flex-1 break-words text-base font-semibold text-foreground">
+              <p className="min-w-0 flex-1 break-words text-sm font-semibold text-foreground sm:text-base">
                 {question.correctText}
               </p>
               <SpeechPlaybackButton
                 text={question.correctText}
                 variant="icon"
-                className="size-9 min-h-9 min-w-9"
+                className="size-9 min-h-9 min-w-9 rounded-full [&_svg]:size-4"
               />
             </div>
           </div>
 
           {question.learningPoint?.text ? (
-            <div className="min-w-0 space-y-1 rounded-xl border border-emerald-200/60 bg-white/70 p-3 dark:border-emerald-800/40 dark:bg-emerald-950/20">
-              <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-emerald-700 uppercase dark:text-emerald-300">
+            <div className="min-w-0 space-y-0.5 rounded-lg border border-primary/20 bg-primary/[0.04] px-2.5 py-2">
+              <p className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wider text-primary uppercase">
                 <Lightbulb className="size-3" aria-hidden="true" />
                 覚えるポイント
               </p>
-              <p className="break-words text-sm font-semibold text-emerald-950 dark:text-emerald-50">
+              <p className="break-words text-sm font-semibold text-foreground">
                 {question.learningPoint.text}
               </p>
               {question.learningPoint.meaning ? (
-                <p className="break-words text-xs leading-relaxed text-emerald-900/80 dark:text-emerald-200/80">
+                <p className="break-words text-xs leading-snug text-muted-foreground">
                   {question.learningPoint.meaning}
                 </p>
               ) : null}
             </div>
           ) : null}
 
-          <div ref={nextWrapRef}>
+          <div ref={nextWrapRef} className="pt-0.5 sm:flex sm:justify-end">
             <Button
               type="button"
               size="lg"
               onClick={onNext}
-              className="h-11 w-full rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
+              className="h-11 w-full rounded-full sm:w-auto sm:min-w-[11rem]"
             >
-              {isLast ? "結果を見る" : "次の問題"}
+              {isLast ? "結果を見る" : "次の問題へ"}
               <ArrowRight className="size-4" aria-hidden="true" />
             </Button>
           </div>

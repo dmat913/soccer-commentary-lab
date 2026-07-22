@@ -18,7 +18,6 @@ export default function AppleIcon() {
           background: "#ffffff",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={KICKLINGO_MARK_DATA_URI} width={140} height={140} alt="" />
       </div>
     ),

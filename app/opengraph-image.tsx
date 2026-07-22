@@ -24,7 +24,6 @@ export default function OpengraphImage() {
         <div
           style={{ display: "flex", alignItems: "center", gap: 28 }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={KICKLINGO_MARK_DATA_URI} width={168} height={168} alt="" />
           <div style={{ display: "flex", fontSize: 128, fontWeight: 800, letterSpacing: -2 }}>
             <span style={{ color: "#0F172A" }}>Kick</span>

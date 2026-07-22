@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { surfaceCardClassName } from "@/lib/design/surfaces";
 import { cn } from "@/lib/utils";
 
 type TranslationCardSkeletonProps = {
@@ -13,7 +14,7 @@ function SkeletonLine({ className }: { className?: string }) {
     <div
       style={{ animationDelay: "var(--skeleton-delay, 0s)" }}
       className={cn(
-        "animate-pulse rounded-md bg-emerald-200/55 motion-reduce:animate-none dark:bg-emerald-800/40",
+        "animate-pulse rounded-md bg-muted motion-reduce:animate-none",
         className
       )}
     />
@@ -31,7 +32,10 @@ export function TranslationCardSkeleton({
   return (
     <Card
       style={delayStyle}
-      className="flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-3xl border border-emerald-100/80 bg-white/95 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/35"
+      className={cn(
+        "flex h-full min-w-0 max-w-full flex-col overflow-hidden",
+        surfaceCardClassName
+      )}
     >
       <CardContent
         className={cn(
@@ -40,9 +44,7 @@ export function TranslationCardSkeleton({
         )}
       >
         <div className="flex items-center justify-between gap-2">
-          <SkeletonLine
-            className={cn("rounded-full", compact ? "size-7" : "size-8")}
-          />
+          <SkeletonLine className={cn("h-5 w-8 rounded-md", compact && "h-5")} />
           <div className="flex gap-1">
             <SkeletonLine className="size-11 rounded-full" />
             <SkeletonLine className="size-11 rounded-full" />
@@ -54,14 +56,12 @@ export function TranslationCardSkeleton({
           <SkeletonLine
             className={cn("w-4/5", compact ? "h-6 sm:h-7" : "h-8 sm:h-9")}
           />
-          <SkeletonLine
-            className={cn("w-3/5", compact ? "h-6 sm:h-7" : "h-8 sm:h-9")}
-          />
+          <SkeletonLine className="h-3.5 w-2/5" />
         </div>
 
         <div
           className={cn(
-            "space-y-1.5 rounded-2xl border border-border/60 bg-gray-50/80 dark:border-border/40 dark:bg-muted/30",
+            "space-y-1.5 rounded-xl border border-border/70 bg-muted/40",
             compact ? "px-3 py-1.5" : "px-4 py-3"
           )}
         >
@@ -71,7 +71,7 @@ export function TranslationCardSkeleton({
 
         <div
           className={cn(
-            "space-y-2 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 dark:border-emerald-800/45 dark:bg-emerald-950/25",
+            "space-y-2 rounded-xl border border-border/80 bg-background",
             compact ? "p-2.5" : "p-4"
           )}
         >
@@ -87,9 +87,12 @@ export function TranslationCardSkeleton({
         </div>
 
         <div className="mt-auto space-y-2 pt-1">
+          <SkeletonLine
+            className={cn("w-full rounded-xl", compact ? "h-11" : "h-11")}
+          />
           <SkeletonLine className="h-2.5 w-14" />
           <SkeletonLine
-            className={cn("w-full rounded-xl", compact ? "h-9" : "h-11")}
+            className={cn("w-full rounded-xl", compact ? "h-10" : "h-11")}
           />
         </div>
       </CardContent>
